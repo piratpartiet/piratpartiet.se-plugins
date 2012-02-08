@@ -56,7 +56,7 @@ body {
 	float: left;
 }
 #topmenu nav > ul > li:hover, #topmenu > div > ul > li:hover {
-	background-color: rgb(139, 199, 80);
+	background-color: #97c037;
 }
 #topmenu nav > ul > li > a, #topmenu > div > ul > li a,
 #topmenu nav > ul > li > a:visited, #topmenu > div > ul > li > a:visited {
@@ -91,7 +91,7 @@ body {
 	font-size: 12px;
 }
 #topmenu .sub-menu li:nth-of-type(2n) {
-	background-color: #ccc;
+	background-color: #dadada;
 }
 #topmenu .sub-menu li:hover {
 	background-color: #aaa;
