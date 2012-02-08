@@ -19,7 +19,7 @@ body {
 }
 /** Piratpartiet link/logo **/
 #mainlink {
-	width: 180px;
+	width: 160px;
 	height: 41px;
 
 	background: transparent url('images/logo.png') no-repeat top left;
@@ -28,6 +28,8 @@ body {
 
 	padding: 0;
 	margin-right: 20px;
+
+	border-right: solid 20px #97c037;
 }
 #mainlink a {
 	display: block;
