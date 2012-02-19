@@ -17,8 +17,7 @@ class PP_ettan {
 	private $plugin_name = "pp-ettan";
 
 	/**
-	 * The constructor is executed when the class is instatiated and the plugin gets loaded.
-	 * @return \PP_Ettan
+	 * The constructor is executed when the class is instatiated and the plugin gets loaded
 	 * @since 1.0
 	 */
 	function __construct() {
@@ -28,6 +27,8 @@ class PP_ettan {
 		// Filters for loading the rss content instead
 		add_filter('get_comments_number', array($this, 'get_comments_number'));
 		add_filter('the_tags', array($this, 'the_tags'), 10, 4);
+
+		$this->load_posts();
 	}
 
 	/**
@@ -59,6 +60,7 @@ class PP_ettan {
 	 * @since 1.0
 	 */
 	function the_tags($terms, $before, $sep, $after) {
+		unset($terms); // Removes variable unused warning
 		global $post;
 		return $before . implode($sep, $post->tags) . $after;
 	}
