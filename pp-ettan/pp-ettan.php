@@ -24,45 +24,12 @@ class PP_ettan {
 		// Add the options menu
 		add_action('admin_menu', array($this,'init_admin_menu'));
 
+		// Load posts periodically
+		add_action('pp_ettan_load_posts', array($this, 'load_posts'));
+
 		// Filters for loading the rss content instead
 		add_filter('get_comments_number', array($this, 'get_comments_number'));
 		add_filter('the_tags', array($this, 'the_tags'), 10, 4);
-
-		$this->load_posts();
-	}
-
-	/**
-	 * Add the options page
-	 * @since 1.0
-	 * @return void
-	 */
-	function init_admin_menu() {
-		add_options_page('Ettan', 'Ettan', 'manage_options', $this->plugin_name, array($this, 'options_page_ettan'));
-	}
-
-	/**
-	 * Attached to the filter 'get_comments_number' and returns the number of comments from RSS
-	 * @return int
-	 * @since 1.0
-	 */
-	function get_comments_number() {
-		global $post;
-		return isset($post->comment_count) ? $post->comment_count : 0;
-	}
-
-	/**
-	 * Attached to the filter 'the_tags' and returns the tags from RSS
-	 * @param $terms
-	 * @param $before
-	 * @param $sep
-	 * @param $after
-	 * @return string
-	 * @since 1.0
-	 */
-	function the_tags($terms, $before, $sep, $after) {
-		unset($terms); // Removes variable unused warning
-		global $post;
-		return $before . implode($sep, $post->tags) . $after;
 	}
 
 	/**
@@ -167,8 +134,9 @@ class PP_ettan {
 	function options_page_ettan() {
 
 		// Fetch current sites from options
-		$sites  = get_option('pp-ettan-sites');
-		$errors = array();
+		$sites    = get_option('pp-ettan-sites');
+		$errors   = array();
+		$messages = array();
 
 		if ( !$sites ) {
 			$sites = array();
@@ -180,6 +148,25 @@ class PP_ettan {
 			// Unset the site and update the option
 			unset($sites[ $_POST['key'] ]);
 			update_option('pp-ettan-sites', $sites);
+
+			// Load posts from rss again and re-set the $sites array
+			$this->load_posts();
+			$sites = get_option('pp-ettan-sites');
+
+			$messages[] = "Sajt borttagen, hämtade även manuellt från underbloggar";
+		}
+
+		// If any of the buttons in the "other" section was used
+		if ( wp_verify_nonce($_POST['_wpnonce'], 'pp-ettan-other') ) {
+
+			// The submit value holds the action
+			switch ( $_POST['submit'] ) {
+				case 'Hämta inlägg':
+					$this->load_posts();
+					$sites = get_option('pp-ettan-sites');
+					$messages[] = "Hämtning från underbloggar genomförd";
+					break;
+			}
 		}
 
 		// If the add site form was submitted
@@ -228,19 +215,86 @@ class PP_ettan {
 				$sites[] = $site;
 
 				update_option('pp-ettan-sites', $sites);
+
+				$messages[] = "Sajt tillagd.";
 			}
 		}
 
 		require "pages/options_page_ettan.php";
 	}
 
+	/**
+	 * Fetch the site object for a post
+	 * @param $post_id
+	 * @return object|bool
+	 * @since 1.0
+	 */
 	function get_site($post_id) {
 
 		list($site, $post) = explode(":", $post_id);
 		$sites = get_option('pp-ettan-sites');
 
-		return $sites[ $site ];
+		return isset($sites[ $site ]) ? $sites[ $site ] : false;
+	}
+
+
+	/**
+	 * Add the options page
+	 * @since 1.0
+	 * @return void
+	 */
+	function init_admin_menu() {
+		add_options_page('Ettan', 'Ettan', 'manage_options', $this->plugin_name, array($this, 'options_page_ettan'));
+	}
+
+	/**
+	 * Attached to the filter 'get_comments_number' and returns the number of comments from RSS
+	 * @return int
+	 * @since 1.0
+	 */
+	function get_comments_number() {
+		global $post;
+		return isset($post->comment_count) ? $post->comment_count : 0;
+	}
+
+	/**
+	 * Attached to the filter 'the_tags' and returns the tags from RSS
+	 * @param $terms
+	 * @param $before
+	 * @param $sep
+	 * @param $after
+	 * @return string
+	 * @since 1.0
+	 */
+	function the_tags($terms, $before, $sep, $after) {
+		unset($terms); // Removes variable unused warning
+		global $post;
+		return $before . implode($sep, $post->tags) . $after;
+	}
+
+	/**
+	 * Activation function
+	 * @static
+	 * @since 1.0
+	 */
+	static function install() {
+		wp_schedule_event(time(), 'hourly', 'pp_ettan_load_posts');
+		wp_schedule_event(time() + 15*60, 'hourly', 'pp_ettan_load_posts');
+		wp_schedule_event(time() + 30*60, 'hourly', 'pp_ettan_load_posts');
+		wp_schedule_event(time() + 45*60, 'hourly', 'pp_ettan_load_posts');
+	}
+
+	/**
+	 * Deactivation function
+	 * @static
+	 * @since 1.0
+	 */
+	static function uninstall() {
+		wp_clear_scheduled_hook('pp_ettan_load_posts');
 	}
 }
+
+register_activation_hook(__FILE__, array('PP_Ettan', 'install'));
+register_deactivation_hook(__FILE__, array('PP_Ettan', 'uninstall'));
 
 $ettan = new PP_ettan();

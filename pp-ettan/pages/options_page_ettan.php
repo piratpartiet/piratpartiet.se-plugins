@@ -9,7 +9,13 @@ if (!current_user_can('manage_options'))  {
 
 	<?php if ( count($errors) > 0) : ?>
 		<?php foreach ( $errors as $error ) : ?>
-			<div class="error below-h2"><?php echo $error ?></div>
+			<div class="error below-h2"><p><?php echo $error ?></p></div>
+		<?php endforeach ?>
+	<?php endif ?>
+
+	<?php if ( count($messages) > 0) : ?>
+		<?php foreach ( $messages as $message ) : ?>
+			<div class="updated below-h2"><p><?php echo $message ?></p></div>
 		<?php endforeach ?>
 	<?php endif ?>
 
@@ -94,6 +100,13 @@ if (!current_user_can('manage_options'))  {
 		</p>
 	</form>
 
-	<h2>Inställningar</h2>
-	<p>Todo inställningar</p>
+	<h2>Övrigt</h2>
+	<form action="" method="post">
+
+		<?php wp_nonce_field('pp-ettan-other') ?>
+
+		<input type="submit" name="submit" class="button" value="Hämta inlägg">
+		<em>Hämtar aktuella inlägg från alla underbloggar manuellt</em>
+
+	</form>
 </div>
