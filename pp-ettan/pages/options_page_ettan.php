@@ -38,7 +38,7 @@ if (!current_user_can('manage_options'))  {
 				</td>
 				<td><?php echo $site->status ?></td>
 				<td><?php echo $site->lastupdate ?></td>
-				<td><?php echo date("Y-m-d H:i:s", strtotime($site->lastbuild)) ?></td>
+				<td><?php echo strlen($site->lastbuild) > 0 ? date("Y-m-d H:i:s", strtotime($site->lastbuild)) : '' ?></td>
 				<td><?php echo $site->posts ?></td>
 				<td>
 					<form action="" method="post">

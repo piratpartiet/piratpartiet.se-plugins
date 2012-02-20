@@ -233,6 +233,14 @@ class PP_ettan {
 
 		require "pages/options_page_ettan.php";
 	}
+
+	function get_site($post_id) {
+
+		list($site, $post) = explode(":", $post_id);
+		$sites = get_option('pp-ettan-sites');
+
+		return $sites[ $site ];
+	}
 }
 
 $ettan = new PP_ettan();
