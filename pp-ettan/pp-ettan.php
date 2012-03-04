@@ -81,8 +81,9 @@ class PP_ettan {
 	 */
 	function load_posts() {
 
-		$sites = get_option('pp-ettan-sites');
-		$posts = array();
+		$sites        = get_option('pp-ettan-sites');
+		$sticky_posts = get_option('pp-ettan-sticky-posts');
+		$posts        = array();
 
 		// Set feed cache time to one second to get fresh results
 		add_filter( 'wp_feed_cache_transient_lifetime' , array($this, 'wp_feed_cache_transient_lifetime') );
@@ -138,7 +139,8 @@ class PP_ettan {
 					$post->comment_count = $item['child']['http://purl.org/rss/1.0/modules/slash/']['comments'][0]['data'];
 					$post->comment_url   = $item['child']['']['comments'][0]['data'];
 					$post->comment_rss   = $item['child']['http://wellformedweb.org/CommentAPI/']['commentRss'][0]['data'];
-					$post->class         = 'class="post-'. $post->ID .' post type-post status-publish format-standard hentry"';
+					$post->class         = 'post-'. $post->ID .' post type-post status-publish format-standard hentry';
+					$post->sticky        = in_array( $post->ID, $sticky_posts );
 
 					$posts[] = $post;
 				}
@@ -154,28 +156,62 @@ class PP_ettan {
 		remove_filter( 'wp_feed_cache_transient_lifetime' , array($this, 'wp_feed_cache_transient_lifetime') );
 
 		// Resort the posts array to show the latest posts at the top
-		usort($posts, function($a, $b) {
-			$time_a = strtotime($a->post_date);
-			$time_b = strtotime($b->post_date);
-
-			if ( $time_a == $time_b )
-				return 0;
-
-			// Backwards, sort descending
-			return ( $time_a > $time_b ) ? -1 : 1;
-		});
+		usort($posts, array($this, 'sort_posts'));
 
 		update_option('pp-ettan-posts', $posts);
 		update_option('pp-ettan-sites', $sites);
 	}
 
 	/**
+	 * Sort function for usort() to sort posts based upon their post date
+	 * @param object $a
+	 * @param object $b
+	 * @return int
+	 */
+	function sort_posts($a, $b) {
+		$time_a = strtotime($a->post_date);
+		$time_b = strtotime($b->post_date);
+
+		if ( $time_a == $time_b )
+			return 0;
+
+		// Backwards, sort descending
+		return ( $time_a > $time_b ) ? -1 : 1;
+	}
+
+	/**
 	 * Get current posts from cache
+	 * @param bool $honor_stickyness   optional, default false
 	 * @since 1.0
 	 * @return mixed|void
 	 */
-	function get_posts() {
+	function get_posts($honor_stickyness = false) {
 		$posts = get_option('pp-ettan-posts');
+
+		// If the result should honor stickyness
+		if ( $posts && $honor_stickyness ) {
+
+			$sticky_posts = array();
+			$normal_posts = array();
+
+			foreach ( $posts as $post ) {
+
+				if ( $post->sticky ) {
+
+					// Add the sticky css class
+					$classes = explode(" ", $post->class);
+					$classes[] = "sticky";
+					$post->class = implode(" ", $classes);
+
+					$sticky_posts[] = $post;
+				} else {
+					$normal_posts[] = $post;
+				}
+			}
+
+			$posts = array_merge( $sticky_posts, $normal_posts );
+		}
+
 		return $posts ? $posts : array();
 	}
 
@@ -188,11 +224,26 @@ class PP_ettan {
 
 		// Fetch current sites from options
 		$sites    = get_option('pp-ettan-sites');
+		$posts    = get_option('pp-ettan-posts');
 		$errors   = array();
 		$messages = array();
 
 		if ( !$sites ) {
 			$sites = array();
+		}
+
+		// If the posts settings button was used
+		if ( wp_verify_nonce($_POST['_wpnonce'], 'pp-ettan-edit-posts') ) {
+
+			// Update the sticky status for each post
+			foreach ( $posts as $post ) {
+				$post->sticky = in_array( $post->ID, $_POST['sticky'] );
+			}
+
+			update_option('pp-ettan-posts', $posts);
+			update_option('pp-ettan-sticky-posts', $_POST['sticky']);
+
+			$messages[] = "Inlägg sparade";
 		}
 
 		// If the 'delete' button was used

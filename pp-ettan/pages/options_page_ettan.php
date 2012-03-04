@@ -100,6 +100,46 @@ if (!current_user_can('manage_options'))  {
 		</p>
 	</form>
 
+	<h2>Inlägg</h2>
+
+	<form action="" method="post">
+
+		<?php wp_nonce_field('pp-ettan-edit-posts') ?>
+
+		<table class="widefat">
+			<thead>
+				<tr>
+					<th>Titel</th>
+					<th>Publicerad</th>
+					<th>Blogg</th>
+					<th>Klistrad</th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach ( $posts as $post ) : ?>
+				<tr>
+					<td><?php echo $post->title ?></td>
+					<td><?php echo date("Y-m-d H:i:s", strtotime($post->post_date) ) ?></td>
+					<td><?php $site = $this->get_site( $post->ID ); echo $site->name ?></td>
+					<td><input type="checkbox" name="sticky[]" value="<?php echo $post->ID ?>" <?php if ( $post->sticky ) echo 'checked="checked"' ?>></td>
+				</tr>
+				<?php endforeach ?>
+			</tbody>
+			<tfoot>
+				<tr>
+					<th>Titel</th>
+					<th>Publicerad</th>
+					<th>Blogg</th>
+					<th>Klistrad</th>
+				</tr>
+			</tfoot>
+		</table>
+		<p class="submit">
+			<input type="submit" class="button-primary" value="Spara">
+		</p>
+	</form>
+
+
 	<h2>Övrigt</h2>
 	<form action="" method="post">
 
