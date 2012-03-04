@@ -30,6 +30,48 @@ class PP_ettan {
 		// Filters for loading the rss content instead
 		add_filter('get_comments_number', array($this, 'get_comments_number'));
 		add_filter('the_tags', array($this, 'the_tags'), 10, 4);
+
+		// Replace the rss, atom and rdf feeds with posts from our rss cache
+		remove_all_actions( 'do_feed_rss2' );
+		remove_all_actions( 'do_feed_atom' );
+		remove_all_actions( 'do_feed_rdf' );
+		add_action( 'do_feed_rss2', array($this, 'feed_rss2'), 10, 1 );
+		add_action( 'do_feed_atom', array($this, 'feed_atom'), 10, 1 );
+		add_action( 'do_feed_rdf',  array($this, 'feed_rdf'),  10, 1 );
+	}
+
+	/**
+	 * Loads our own version of the rss2 feed
+	 * @param $for_comments
+	 * @since 1.0
+	 */
+	function feed_rss2( $for_comments ) {
+		$dir = dirname(__FILE__);
+		require $dir . '/feed-rss2.php';
+	}
+
+	/**
+	 * Loads our own version of the atom feed
+	 * @since 1.0
+	 */
+	function feed_atom() {
+		$dir = dirname(__FILE__);
+		require $dir . '/feed-atom.php';
+	}
+
+	function feed_rdf() {
+		$dir = dirname(__FILE__);
+		require $dir . '/feed-rdf.php';
+	}
+
+
+	/**
+	 * Will be attached to the wp_feed_cache_transient_lifetime filter when refreshing posts
+	 * @param $seconds
+	 * @return int
+	 */
+	function wp_feed_cache_transient_lifetime($seconds) {
+		return ($seconds * 0) + 1;
 	}
 
 	/**
@@ -41,6 +83,9 @@ class PP_ettan {
 
 		$sites = get_option('pp-ettan-sites');
 		$posts = array();
+
+		// Set feed cache time to one second to get fresh results
+		add_filter( 'wp_feed_cache_transient_lifetime' , array($this, 'wp_feed_cache_transient_lifetime') );
 
 		// Iterate all the sites
 		foreach ( $sites as $key => $site ) {
@@ -85,9 +130,14 @@ class PP_ettan {
 					$post->ID            = "$key:$ID";
 					$post->title         = $item['child']['']['title'][0]['data'];
 					$post->permalink     = $item['child']['']['link'][0]['data'];
+					$post->guid          = $item['child']['']['guid'][0]['data'];
 					$post->excerpt       = $item['child']['']['description'][0]['data'];
+					$post->post_content  = $item['child']['http://purl.org/rss/1.0/modules/content/']['encoded'][0]['data'];
 					$post->post_date     = $item['child']['']['pubDate'][0]['data'];
+					$post->author        = $item['child']['http://purl.org/dc/elements/1.1/']['creator'][0]['data'];
 					$post->comment_count = $item['child']['http://purl.org/rss/1.0/modules/slash/']['comments'][0]['data'];
+					$post->comment_url   = $item['child']['']['comments'][0]['data'];
+					$post->comment_rss   = $item['child']['http://wellformedweb.org/CommentAPI/']['commentRss'][0]['data'];
 					$post->class         = 'class="post-'. $post->ID .' post type-post status-publish format-standard hentry"';
 
 					$posts[] = $post;
@@ -99,6 +149,9 @@ class PP_ettan {
 				$sites[ $key ]->lastbuild = $channel['lastBuildDate'][0]['data'];
 			}
 		}
+
+		// Remove the filter again
+		remove_filter( 'wp_feed_cache_transient_lifetime' , array($this, 'wp_feed_cache_transient_lifetime') );
 
 		// Resort the posts array to show the latest posts at the top
 		usort($posts, function($a, $b) {
@@ -233,6 +286,8 @@ class PP_ettan {
 
 		list($site, $post) = explode(":", $post_id);
 		$sites = get_option('pp-ettan-sites');
+
+		unset($post); // unused, supresses editor warning
 
 		return isset($sites[ $site ]) ? $sites[ $site ] : false;
 	}
