@@ -182,10 +182,13 @@ class PP_ettan {
 	/**
 	 * Get current posts from cache
 	 * @param bool $honor_stickyness   optional, default false
+	 * @param int  $page               optional, default 1
 	 * @since 1.0
 	 * @return mixed|void
 	 */
-	function get_posts($honor_stickyness = false) {
+	function get_posts($honor_stickyness = false, $page = null) {
+
+		$ppp   = get_option('posts_per_page');
 		$posts = get_option('pp-ettan-posts');
 
 		// If the result should honor stickyness
@@ -210,6 +213,10 @@ class PP_ettan {
 			}
 
 			$posts = array_merge( $sticky_posts, $normal_posts );
+		}
+
+		if ( isset($page) && is_array($posts) && count($posts) > $ppp ) {
+			$posts = array_slice( $posts, $ppp * $page, $ppp );
 		}
 
 		return $posts ? $posts : array();
