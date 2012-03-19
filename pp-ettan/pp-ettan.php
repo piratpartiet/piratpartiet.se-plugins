@@ -215,7 +215,7 @@ class PP_ettan {
 			$posts = array_merge( $sticky_posts, $normal_posts );
 		}
 
-		if ( isset($page) && is_array($posts) && count($posts) > $ppp ) {
+		if ( isset($page) && is_array($posts) && count($posts) > 0 ) {
 			$posts = array_slice( $posts, $ppp * $page, $ppp );
 		}
 
