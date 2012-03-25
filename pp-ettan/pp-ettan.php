@@ -202,6 +202,29 @@ class PP_ettan {
 		// If it's a search query
 		if ( $posts && is_search() ) {
 
+			// First fetch the local search query from $wp_query
+			global $wp_query;
+
+			$internal_search_posts = $wp_query->posts;
+
+			// Iterate the post and make them "rss post like"
+			foreach ( $internal_search_posts as $isp ) {
+
+				$isp->tags      = get_the_tags( $isp->ID );
+				$isp->permalink = get_permalink($isp->ID);
+
+				// BEGIN FACEPALM SECTION
+				$isp->title   = $isp->post_title;
+				$isp->excerpt = strlen($isp->post_excerpt) > 0 ? $isp->post_excerpt : $this->wp_trim_excerpt( $isp->post_content )  ;
+				// END FACEPALM SECTION
+
+				if ( !$isp->tags ) {
+					$isp->tags = array();
+				}
+			}
+
+			$posts = array_merge($posts, $internal_search_posts);
+
 			// First clean the search query
 			// wp-includes/query.php:2184
 			preg_match_all('/".*?("|$)|((?<=[\\s",+])|^)[^\\s",+]+/', $_GET['s'], $matches);
@@ -408,6 +431,16 @@ class PP_ettan {
 	 */
 	function get_site($post_id) {
 
+		// If the post is a local post just return the blog url and name
+		if ( ! self::is_rss_post($post_id) ) {
+			$site = new stdClass;
+
+			$site->url  = get_bloginfo('url');
+			$site->name = get_bloginfo('name');
+
+			return $site;
+		}
+
 		list($site, $post) = explode(":", $post_id);
 		$sites = get_option('pp-ettan-sites');
 
@@ -449,9 +482,10 @@ class PP_ettan {
 		unset($terms); // Removes variable unused warning
 		global $post;
 
-		// "Normal" WP posts will have integer ID's
-		if ( is_int($post->ID) ) {
+		// If the post is a local post, get the tags using the_tags()
+		if ( ! self::is_rss_post( $post ) ) {
 
+			// Prevent infinite recursion since this function is attached to the filter the_tags
 			remove_filter('the_tags', array($this, 'the_tags') );
 
 			$ret = the_tags($before, $sep, $after);
@@ -462,6 +496,38 @@ class PP_ettan {
 		}
 
 		return $before . implode($sep, $post->tags) . $after;
+	}
+
+	/**
+	 * A copy of wp_trim_excerpt() from wp-includes/formatting.php:1894 without the call to the_content()
+	 * @param  string $text
+	 * @return string
+	 * @since  1.0
+	 */
+	function wp_trim_excerpt( $text ) {
+
+		$raw_excerpt = $text;
+
+		$text = strip_shortcodes( $text );
+
+		$text = apply_filters('the_content', $text);
+		$text = str_replace(']]>', ']]&gt;', $text);
+		$excerpt_length = apply_filters('excerpt_length', 55);
+		$excerpt_more = apply_filters('excerpt_more', ' ' . '[...]');
+		$text = wp_trim_words( $text, $excerpt_length, $excerpt_more );
+
+		return apply_filters('wp_trim_excerpt', $text, $raw_excerpt);
+	}
+
+	/**
+	 * Check to see if the post is an rss post
+	 * @static
+	 * @param  stdClass|int $post   The post object or post ID
+	 * @return bool
+	 * @since  1.0
+	 */
+	static function is_rss_post( $post ) {
+		return $post instanceof stdClass ? ! is_int( $post->ID ) : ! is_int( $post );
 	}
 
 	/**
