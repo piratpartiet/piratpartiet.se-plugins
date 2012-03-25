@@ -9,12 +9,26 @@ Author URI: https://0x539.se
 */
 
 /**
- * This is where you add comments for your plugin class
+ * Render RSS fetched posts, and more.
  * @author Rickard Andersson
+ * @since 1.0
  */
 class PP_ettan {
 
+	/**
+	 * Plugin name
+	 * @var string
+	 * @since 1.0
+	 */
 	private $plugin_name = "pp-ettan";
+
+	/**
+	 * How many posts were fetched from the DB call in the last call to get_posts()
+	 * This is the number of posts _before paging is applied_
+	 * @var int
+	 * @since 1.0
+	 */
+	private $last_get_posts_count = 0;
 
 	/**
 	 * The constructor is executed when the class is instatiated and the plugin gets loaded
@@ -196,101 +210,114 @@ class PP_ettan {
 	 */
 	function get_posts($honor_stickyness = false, $page = null) {
 
+		// Stupid WP thing where the first page is page zero, and the second page two.
+		if ( $page == 0 ) {
+			$page = 1;
+		}
+
 		// Try to fetch from cache first
-		$cacheKey = 'get_posts-' . sprintf("%x", crc32( $_SERVER['REQUEST_URI'] . ( $honor_stickyness ? 'sticky' : '' ) . $page ) );
-		$cached   = get_transient( $cacheKey );
+		$pageKey  = sprintf("%x", crc32( $_SERVER['REQUEST_URI'] . ( $honor_stickyness ? 'sticky' : '' ) ) );
+		$cacheKey = 'get_posts-' . $pageKey;
 
-		if ( $cached ) {
-			return $cached;
-		}
+		// Try to fetch from cache, if that fails fetch it from the DB
+		if ( ($posts = get_transient( $cacheKey )) === false ) {
 
-		$ppp   = get_option('posts_per_page');
-		$posts = get_option('pp-ettan-posts');
+			$posts = get_option('pp-ettan-posts');
 
-		// If it's a search query
-		if ( $posts && is_search() ) {
+			// If it's a search query
+			if ( $posts && is_search() ) {
 
-			// Simple DoS prevention when having lots of posts. If the search string is long enough with lots of
-			// terms the for loop matching the terms against the posts will be consuming lots of resources.
-			if ( strlen($_GET['s']) > 500 ) {
-				return array();
-			}
-
-			// First fetch the local search query from $wp_query
-			global $wp_query;
-
-			$internal_search_posts = $wp_query->posts;
-
-			// Iterate the post and make them "rss post like"
-			foreach ( $internal_search_posts as $isp ) {
-
-				$isp->tags      = get_the_tags( $isp->ID );
-				$isp->permalink = get_permalink( $isp->ID );
-				$isp->class     = implode(' ', get_post_class( $isp->ID ) );
-
-				// BEGIN FACEPALM SECTION
-				$isp->title   = $isp->post_title;
-				$isp->excerpt = strlen( $isp->post_excerpt ) > 0 ? $isp->post_excerpt : $this->wp_trim_excerpt( $isp->post_content )  ;
-				// END FACEPALM SECTION
-
-				if ( ! $isp->tags ) {
-					$isp->tags = array();
+				// Simple DoS prevention when having lots of posts. If the search string is long enough with lots of
+				// terms the for loop matching the terms against the posts will be consuming lots of resources.
+				if ( strlen($_GET['s']) > 500 ) {
+					return array();
 				}
-			}
 
-			$posts = array_merge($posts, $internal_search_posts);
+				// Fetch the current search query, alter some query vars and redo the query to get all the posts without paging
+				global $wp_query;
 
-			// First clean the search query
-			// wp-includes/query.php:2184
-			preg_match_all('/".*?("|$)|((?<=[\\s",+])|^)[^\\s",+]+/', $_GET['s'], $matches);
-			$terms = array_map('_search_terms_tidy', $matches[0]);
+				$query_vars = $wp_query->query_vars;
+				unset($query_vars['paged']);
+				$query_vars['posts_per_page'] = 0;
 
-			// Iterate all the terms and posts to find matches
-			foreach ( $terms as $term ) {
-				foreach ( $posts as $post ) {
+				$wp_query = new WP_Query($query_vars);
 
-					// Check title, post content and tags
-					$query    = mb_strtolower( $term );
-					$matches  = substr_count( mb_strtolower($post->title),        $query );
-					$matches += substr_count( mb_strtolower($post->post_content), $query );
+				$internal_search_posts = $wp_query->posts;
 
-					foreach ( $post->tags as $tag ) {
-						$matches += substr_count( mb_strtolower($tag), $query);
+				// Iterate the post and make them "rss post like"
+				foreach ( $internal_search_posts as $isp ) {
+
+					$isp->permalink = get_permalink( $isp->ID );
+					$isp->class     = implode(' ', get_post_class( $isp->ID ) );
+
+					$tags      = get_the_tags( $isp->ID );
+					$isp->tags = is_array( $tags ) ? array_map(function($a) { return $a->name; }, $tags) : '';
+
+					// BEGIN FACEPALM SECTION
+					$isp->title   = $isp->post_title;
+					$isp->excerpt = strlen( $isp->post_excerpt ) > 0 ? $isp->post_excerpt : $this->wp_trim_excerpt( $isp->post_content )  ;
+					// END FACEPALM SECTION
+
+					if ( ! $isp->tags ) {
+						$isp->tags = array();
 					}
+				}
 
-					// Set number of matches
-					if ( !isset( $post->matches ) ) {
-						$post->matches = 0;
+				$posts = array_merge($posts, $internal_search_posts);
+
+				// First clean the search query
+				// wp-includes/query.php:2184
+				preg_match_all('/".*?("|$)|((?<=[\\s",+])|^)[^\\s",+]+/', $_GET['s'], $matches);
+				$terms = array_map('_search_terms_tidy', $matches[0]);
+
+				// Iterate all the terms and posts to find matches
+				foreach ( $terms as $term ) {
+					foreach ( $posts as $post ) {
+
+						// Check title, post content and tags
+						$query    = mb_strtolower( $term );
+						$matches  = substr_count( mb_strtolower($post->title),        $query );
+						$matches += substr_count( mb_strtolower($post->post_content), $query );
+
+						foreach ( $post->tags as $tag ) {
+							$matches += substr_count( mb_strtolower($tag), $query);
+						}
+
+						// Set number of matches
+						if ( !isset( $post->matches ) ) {
+							$post->matches = 0;
+						}
+
+						$post->matches += $matches;
 					}
+				}
 
-					$post->matches += $matches;
+				// Reset the $posts array and iterate the current array to only save those with matches
+				$_posts = $posts;
+				$posts  = array();
+
+				foreach ( $_posts as $post ) {
+					if ( $post->matches > 0 ) {
+						$posts[] = $post;
+					}
+				}
+
+				// Sort them on number of matches and then post date
+				if ( count($posts) > 0 ) {
+					usort($posts, function ($a, $b) {
+
+						// Both comparisons are backwards to get order by descending
+
+						if ( $a->matches == $b->matches )
+							return strtotime($a->post_date) < strtotime($b->post_date) ? 1 : -1;
+
+						return $a->matches < $b->matches ? 1 : -1;
+					});
 				}
 			}
 
-			// Reset the $posts array and iterate the current array to only save those with matches
-			$_posts = $posts;
-			$posts  = array();
-
-			foreach ( $_posts as $post ) {
-				if ( $post->matches > 0 ) {
-					$posts[] = $post;
-				}
-			}
-
-			// Sort them on number of matches and then post date
-			if ( count($posts) > 0 ) {
-				usort($posts, function ($a, $b) {
-
-					// Both comparisons are backwards to get order by descending
-
-					if ( $a->matches == $b->matches )
-						return strtotime($a->post_date) < strtotime($b->post_date) ? 1 : -1;
-
-					return $a->matches < $b->matches ? 1 : -1;
-				});
-			}
+			set_transient( $cacheKey, $posts, 60 * 10 );
 		}
-
 
 		// If the result should honor stickyness
 		if ( $posts && $honor_stickyness ) {
@@ -316,12 +343,16 @@ class PP_ettan {
 			$posts = array_merge( $sticky_posts, $normal_posts );
 		}
 
+		// Save the post count before applying paging
+		$this->last_get_posts_count = count($posts);
+
+		// Paging
+		$ppp = get_option('posts_per_page');
 
 		if ( isset($page) && is_array($posts) && count($posts) > 0 ) {
-			$posts = array_slice( $posts, $ppp * $page, $ppp );
+			$posts = array_slice( $posts, $ppp * ($page - 1), $ppp );
 		}
 
-		set_transient( $cacheKey, $posts, 60 * 10 );
 		return $posts ? $posts : array();
 	}
 
@@ -541,6 +572,16 @@ class PP_ettan {
 		$text = wp_trim_words( $text, $excerpt_length, $excerpt_more );
 
 		return apply_filters('wp_trim_excerpt', $text, $raw_excerpt);
+	}
+
+	/**
+	 * Get the total number of posts from the last call to get_posts(). That is the numbero of posts _before paging
+	 * was applied_.
+	 * @since  1.0
+	 * @return int
+	 */
+	function get_max_posts_count() {
+		return $this->last_get_posts_count;
 	}
 
 	/**
