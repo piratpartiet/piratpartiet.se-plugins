@@ -22,14 +22,14 @@ class PP_ettan {
 	 */
 	function __construct() {
 		// Add the options menu
-		add_action('admin_menu', array($this,'init_admin_menu'));
+		add_action( 'admin_menu', array($this,'init_admin_menu') );
 
 		// Load posts periodically
-		add_action('pp_ettan_load_posts', array($this, 'load_posts'));
+		add_action( 'pp_ettan_load_posts', array($this, 'load_posts') );
 
 		// Filters for loading the rss content instead
-		add_filter('get_comments_number', array($this, 'get_comments_number'));
-		add_filter('the_tags', array($this, 'the_tags'), 10, 4);
+		add_filter( 'get_comments_number', array($this, 'get_comments_number') );
+		add_filter( 'the_tags', array($this, 'the_tags'), 10, 4 ); // NOTE: Duplicated in this->the_tags
 
 		// Replace the rss, atom and rdf feeds with posts from our rss cache
 		remove_all_actions( 'do_feed_rss2' );
@@ -52,6 +52,7 @@ class PP_ettan {
 
 	/**
 	 * Loads our own version of the atom feed
+	 * @return void
 	 * @since 1.0
 	 */
 	function feed_atom() {
@@ -59,6 +60,11 @@ class PP_ettan {
 		require $dir . '/feed-atom.php';
 	}
 
+	/**
+	 * Loads or own version of the rdf feed
+	 * @return void
+	 * @since 1.0
+	 */
 	function feed_rdf() {
 		$dir = dirname(__FILE__);
 		require $dir . '/feed-rdf.php';
@@ -69,6 +75,7 @@ class PP_ettan {
 	 * Will be attached to the wp_feed_cache_transient_lifetime filter when refreshing posts
 	 * @param $seconds
 	 * @return int
+	 * @since 1.0
 	 */
 	function wp_feed_cache_transient_lifetime($seconds) {
 		return ($seconds * 0) + 1;
@@ -167,6 +174,7 @@ class PP_ettan {
 	 * @param object $a
 	 * @param object $b
 	 * @return int
+	 * @since 1.0
 	 */
 	function sort_posts($a, $b) {
 		$time_a = strtotime($a->post_date);
@@ -191,6 +199,63 @@ class PP_ettan {
 		$ppp   = get_option('posts_per_page');
 		$posts = get_option('pp-ettan-posts');
 
+		// If it's a search query
+		if ( $posts && is_search() ) {
+
+			// First clean the search query
+			// wp-includes/query.php:2184
+			preg_match_all('/".*?("|$)|((?<=[\\s",+])|^)[^\\s",+]+/', $_GET['s'], $matches);
+			$terms = array_map('_search_terms_tidy', $matches[0]);
+
+			// Iterate all the terms and posts to find matches
+			//
+			// TODO: performance test
+			foreach ( $terms as $term ) {
+				foreach ( $posts as $post ) {
+
+					// Check title, post content and tags
+					$query    = mb_strtolower( $term );
+					$matches  = substr_count( mb_strtolower($post->title),        $query );
+					$matches += substr_count( mb_strtolower($post->post_content), $query );
+
+					foreach ( $post->tags as $tag ) {
+						$matches += substr_count( mb_strtolower($tag), $query);
+					}
+
+					// Set number of matches
+					if ( !isset( $post->matches ) ) {
+						$post->matches = 0;
+					}
+
+					$post->matches += $matches;
+				}
+			}
+
+			// Reset the $posts array and iterate the current array to only save those with matches
+			$_posts = $posts;
+			$posts  = array();
+
+			foreach ( $_posts as $post ) {
+				if ( $post->matches > 0 ) {
+					$posts[] = $post;
+				}
+			}
+
+			// Sort them on number of matches and then post date
+			if ( count($posts) > 0 ) {
+				usort($posts, function ($a, $b) {
+
+					// Both comparisons are backwards to get order by descending
+
+					if ( $a->matches == $b->matches )
+						return strtotime($a->post_date) < strtotime($b->post_date) ? 1 : -1;
+
+					return $a->matches < $b->matches ? 1 : -1;
+				});
+			}
+		}
+
+
 		// If the result should honor stickyness
 		if ( $posts && $honor_stickyness ) {
 
@@ -214,6 +279,7 @@ class PP_ettan {
 
 			$posts = array_merge( $sticky_posts, $normal_posts );
 		}
+
 
 		if ( isset($page) && is_array($posts) && count($posts) > 0 ) {
 			$posts = array_slice( $posts, $ppp * $page, $ppp );
@@ -382,6 +448,19 @@ class PP_ettan {
 	function the_tags($terms, $before, $sep, $after) {
 		unset($terms); // Removes variable unused warning
 		global $post;
+
+		// "Normal" WP posts will have integer ID's
+		if ( is_int($post->ID) ) {
+
+			remove_filter('the_tags', array($this, 'the_tags') );
+
+			$ret = the_tags($before, $sep, $after);
+
+			add_filter('the_tags', array($this, 'the_tags'), 10, 4);
+
+			return $ret;
+		}
+
 		return $before . implode($sep, $post->tags) . $after;
 	}
 
