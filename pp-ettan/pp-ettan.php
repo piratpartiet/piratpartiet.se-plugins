@@ -196,11 +196,25 @@ class PP_ettan {
 	 */
 	function get_posts($honor_stickyness = false, $page = null) {
 
+		// Try to fetch from cache first
+		$cacheKey = 'get_posts-' . sprintf("%x", crc32( $_SERVER['REQUEST_URI'] . ( $honor_stickyness ? 'sticky' : '' ) . $page ) );
+		$cached   = get_transient( $cacheKey );
+
+		if ( $cached ) {
+			return $cached;
+		}
+
 		$ppp   = get_option('posts_per_page');
 		$posts = get_option('pp-ettan-posts');
 
 		// If it's a search query
 		if ( $posts && is_search() ) {
+
+			// Simple DoS prevention when having lots of posts. If the search string is long enough with lots of
+			// terms the for loop matching the terms against the posts will be consuming lots of resources.
+			if ( strlen($_GET['s']) > 500 ) {
+				return array();
+			}
 
 			// First fetch the local search query from $wp_query
 			global $wp_query;
@@ -212,8 +226,8 @@ class PP_ettan {
 
 				$isp->tags      = get_the_tags( $isp->ID );
 				$isp->permalink = get_permalink( $isp->ID );
+				$isp->class     = implode(' ', get_post_class( $isp->ID ) );
 
-				// todo add ->class
 				// BEGIN FACEPALM SECTION
 				$isp->title   = $isp->post_title;
 				$isp->excerpt = strlen( $isp->post_excerpt ) > 0 ? $isp->post_excerpt : $this->wp_trim_excerpt( $isp->post_content )  ;
@@ -232,8 +246,6 @@ class PP_ettan {
 			$terms = array_map('_search_terms_tidy', $matches[0]);
 
 			// Iterate all the terms and posts to find matches
-			//
-			// TODO: performance test
 			foreach ( $terms as $term ) {
 				foreach ( $posts as $post ) {
 
@@ -309,6 +321,7 @@ class PP_ettan {
 			$posts = array_slice( $posts, $ppp * $page, $ppp );
 		}
 
+		set_transient( $cacheKey, $posts, 60 * 10 );
 		return $posts ? $posts : array();
 	}
 
@@ -451,6 +464,7 @@ class PP_ettan {
 			return $site;
 		}
 
+		/** @var $site string */
 		list($site, $post) = explode(":", $post_id);
 		$sites = get_option('pp-ettan-sites');
 
