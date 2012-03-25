@@ -211,14 +211,15 @@ class PP_ettan {
 			foreach ( $internal_search_posts as $isp ) {
 
 				$isp->tags      = get_the_tags( $isp->ID );
-				$isp->permalink = get_permalink($isp->ID);
+				$isp->permalink = get_permalink( $isp->ID );
 
+				// todo add ->class
 				// BEGIN FACEPALM SECTION
 				$isp->title   = $isp->post_title;
-				$isp->excerpt = strlen($isp->post_excerpt) > 0 ? $isp->post_excerpt : $this->wp_trim_excerpt( $isp->post_content )  ;
+				$isp->excerpt = strlen( $isp->post_excerpt ) > 0 ? $isp->post_excerpt : $this->wp_trim_excerpt( $isp->post_content )  ;
 				// END FACEPALM SECTION
 
-				if ( !$isp->tags ) {
+				if ( ! $isp->tags ) {
 					$isp->tags = array();
 				}
 			}
@@ -309,6 +310,15 @@ class PP_ettan {
 		}
 
 		return $posts ? $posts : array();
+	}
+
+	/**
+	 * Check if there's currently any posts in store
+	 * @since 1.0
+	 * @return bool
+	 */
+	function have_posts() {
+		return count( get_option( 'pp-ettan-posts' ) ) > 0;
 	}
 
 	/**
