@@ -99,7 +99,7 @@ body {
 	background-color: #aaa;
 }
 #topmenu .sub-menu a, #topmenu .sub-menu a:visited {
-	padding: 0 10px;
+	padding: 2px 12px;
 
 	display: block;
 	height: 25px;
