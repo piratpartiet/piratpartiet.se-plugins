@@ -26,10 +26,10 @@ body {
 
 	font-size: 0;
 
-	padding: 0;
+	padding: 0 10px 0 0;
 	margin-right: 20px;
 
-	border-right: solid 20px #ec8b00;
+	border-right: solid 15px #ec8b00;
 }
 #mainlink a {
 	display: block;
