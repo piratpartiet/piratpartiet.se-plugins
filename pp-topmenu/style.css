@@ -29,7 +29,7 @@ body {
 	padding: 0;
 	margin-right: 20px;
 
-	border-right: solid 20px #97c037;
+	border-right: solid 20px #ec8b00;
 }
 #mainlink a {
 	display: block;
@@ -58,7 +58,7 @@ body {
 	float: left;
 }
 #topmenu nav > ul > li:hover, #topmenu > div > ul > li:hover {
-	background-color: #97c037;
+	background-color: #ec8b00;
 }
 #topmenu nav > ul > li > a, #topmenu > div > ul > li a,
 #topmenu nav > ul > li > a:visited, #topmenu > div > ul > li > a:visited {
@@ -78,7 +78,7 @@ body {
 
 	visibility: hidden;
 
-	border: solid 3px #97c037;
+	border: solid 3px #ec8b00;
 
 	-webkit-border-radius: 5px;
 	-moz-border-radius: 5px;
