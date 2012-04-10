@@ -78,7 +78,7 @@ body {
 
 	visibility: hidden;
 
-	border: solid 3px #ec8b00;
+	border: solid 2px #ec8b00;
 
 	-webkit-border-radius: 5px;
 	-moz-border-radius: 5px;
@@ -99,7 +99,7 @@ body {
 	background-color: #aaa;
 }
 #topmenu .sub-menu a, #topmenu .sub-menu a:visited {
-	padding: 0 5px;
+	padding: 0 10px;
 
 	display: block;
 	height: 25px;
