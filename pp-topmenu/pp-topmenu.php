@@ -64,7 +64,7 @@ class PP_Topmenu {
 	}
 	
 	private function init_menus() {
-		register_nav_menu(PP_TOPMENU_NAME, __('PP Toppmeny'));
+		register_nav_menu(PP_TOPMENU_NAME, __('PP Gemensam meny'));
 	}
 	
 	/**
