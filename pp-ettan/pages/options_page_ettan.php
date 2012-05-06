@@ -100,6 +100,7 @@ if (!current_user_can('manage_options'))  {
 		</p>
 	</form>
 
+    <?php if ( isset($posts) && is_array($posts) && count($posts) > 0 ) : ?>
 	<h2>Inlägg</h2>
 
 	<form action="" method="post">
@@ -138,6 +139,8 @@ if (!current_user_can('manage_options'))  {
 			<input type="submit" class="button-primary" value="Spara">
 		</p>
 	</form>
+
+    <?php endif ?>
 
 
 	<h2>Övrigt</h2>

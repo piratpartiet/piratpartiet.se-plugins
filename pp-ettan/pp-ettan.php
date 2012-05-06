@@ -103,8 +103,12 @@ class PP_ettan {
 	function load_posts() {
 
 		$sites        = get_option('pp-ettan-sites');
-		$sticky_posts = get_option('pp-ettan-sticky-posts');
 		$posts        = array();
+        $sticky_posts = get_option('pp-ettan-sticky-posts');
+
+        if ( !$sticky_posts ) {
+            $sticky_posts = array();
+        }
 
 		// Set feed cache time to one second to get fresh results
 		add_filter( 'wp_feed_cache_transient_lifetime' , array($this, 'wp_feed_cache_transient_lifetime') );
