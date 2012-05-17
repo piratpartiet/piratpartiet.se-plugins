@@ -48,6 +48,8 @@ body {
 	-webkit-box-shadow: 0 2px 4px #222;
 	-mox-box-shadow: 0 2px 4px #222;
 	box-shadow: 0 2px 4px #222;
+
+	overflow: hidden;
 }
 #topmenu nav > ul, #topmenu > div > ul {
 	width: 1000px;
@@ -113,4 +115,19 @@ body {
 
 #topmenu .sub-menu .sub-menu {
 	margin-top: -31px;
+}
+
+@media only screen and (max-width: 768px) {
+	#topmenu nav > ul, #topmenu > div > ul {
+		width: 185px;
+		float: left;
+		overflow: hidden;
+	}
+
+	#topmenu nav:hover, #topmenu > div:hover {
+		height: auto;
+	}
+	#topmenu nav:hover > ul, #topmenu > div:hover > ul {
+		width: auto;
+	}
 }
