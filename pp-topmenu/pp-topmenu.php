@@ -108,6 +108,25 @@ class PP_Topmenu {
 		);
 		
 		wp_nav_menu($args);
+
+		?><script>(function () {
+
+		"use strict";
+
+		document.getElementById('expander').addEventListener('click', function () {
+			var tm = document.getElementById('topmenu'),
+				classes = tm.className.split(/ /),
+				index = classes.indexOf('expanded');
+
+			if (index !== -1) {
+				delete classes[index];
+			} else {
+				classes.push('expanded');
+			}
+
+			tm.className = classes.join(' ');
+		});
+	}());</script><?php
 	}
 	
 	/**
@@ -129,6 +148,7 @@ class PP_Topmenu_Walker extends Walker_Nav_Menu {
 
 		if ($this->first === true) {
 			$output .= '<li id="mainlink"><a href="http://www.piratpartiet.se/" title="Piratpartiet">Piratpartiet</a></li>';
+			$output .= '<li id="expander"><button>≡</button></li>';
 			$this->first = false;
 		}
 		

@@ -117,17 +117,73 @@ body {
 	margin-top: -31px;
 }
 
+#expander {
+	display: none;
+}
+
+
 @media only screen and (max-width: 768px) {
-	#topmenu nav > ul, #topmenu > div > ul {
-		width: 185px;
-		float: left;
-		overflow: hidden;
+
+	#topmenu {
+		position: static;
 	}
 
-	#topmenu nav:hover, #topmenu > div:hover {
+	#topmenu nav > ul, #topmenu > div > ul {
+		width: 185px;
+		overflow: hidden;
+		margin: 0;
+	}
+
+	#topmenu.expanded nav > ul, #topmenu.expanded > div > ul {
+		width: auto;
+	}
+
+	#topmenu.expanded nav, #topmenu.expanded > div {
 		height: auto;
 	}
-	#topmenu nav:hover > ul, #topmenu > div:hover > ul {
-		width: auto;
+
+	#topmenu.expanded .sub-menu {
+		visibility: visible;
+		position: static;
+		background: none;
+		border: none;
+		margin-left: 20px;
+	}
+
+	#topmenu.expanded nav > ul > li, #topmenu.expanded > div > ul > li {
+		float: none;
+	}
+
+
+	#topmenu.expanded .sub-menu a, #topmenu.expanded .sub-menu a:visited {
+		color: #fff;
+	}
+
+	#topmenu.expanded .sub-menu li:nth-of-type(2n),
+	#topmenu.expanded .sub-menu li:hover,
+	#topmenu.expanded nav > ul > li:hover,
+	#topmenu.expanded > div > ul > li:hover {
+		background-color: transparent;
+	}
+
+	#expander {
+		display: block;
+	}
+
+	#expander button {
+		cursor: pointer;
+		position: absolute;
+		top: 0;
+		right: 5px;
+		width: 40px;
+		height: 40px;
+		background: transparent;
+		color: #fff;
+		border: none;
+		font-size: 30px;
+	}
+
+	body {
+		padding-top: 0;
 	}
 }
