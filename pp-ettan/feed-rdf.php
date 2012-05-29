@@ -1,4 +1,4 @@
-<?php
+<?php if ( !defined("ABSPATH") ) die();
 /**
  * Template file for the rdf feed. This file is copied from the WordPress core with namespace and functions added.
  * NOTE: When updating this template to a newer version make sure to change the way <dc:date> is fetched since it's been

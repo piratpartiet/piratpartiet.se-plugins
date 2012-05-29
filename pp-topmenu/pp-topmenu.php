@@ -1,4 +1,4 @@
-<?php
+<?php if ( !defined("ABSPATH") ) die();
 /*
 Plugin Name: Piratpartiet toppmeny
 Plugin URI: http://www.piratpartiet.se/

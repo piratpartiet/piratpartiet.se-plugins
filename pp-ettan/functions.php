@@ -1,4 +1,4 @@
-<?php
+<?php if ( !defined("ABSPATH") ) die();
 /**
  * Namespaced functions for rendering the rss, atom and rdf feeds. This method is used so that the templates are easy
  * to update whenever WordPress updates their own templates.

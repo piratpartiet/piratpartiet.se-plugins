@@ -1,4 +1,4 @@
-<?php
+<?php if ( !defined("ABSPATH") ) die();
 /**
  * Template file for the atom feed. This file is copied from the WordPress core with namespace and functions added.
  *
