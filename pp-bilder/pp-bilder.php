@@ -8,7 +8,7 @@
  Author URI: https://0x539.se
  */
 
-define('PP_BILDER_DIRECTORY', '/tmp');
+define('PP_BILDER_DIRECTORY', '/tmp/');
 
 /**
  * Common image manager
@@ -34,7 +34,7 @@ class PP_Bilder {
 
 	/**
 	 * An array of all the images currently loaded by the plugin
-	 * @var array
+	 * @var stdClass[]
 	 * @since 1.0
 	 */
 	private $images = array();
@@ -46,6 +46,7 @@ class PP_Bilder {
 	 */
 	public function __construct() {
 		add_action('admin_head', array($this, 'admin_head'));
+		add_action('wp_ajax_pp_bilder_import_image', array($this, 'ajax_import_image'));
 	}
 
 	/**
@@ -121,7 +122,7 @@ class PP_Bilder {
 	/**
 	 * Returns the URL for the thumb for the filename specified
 	 * @param string $filename  Original file name
-	 * @return string
+	 * @return stdClass
 	 * @since 1.0
 	 */
 	private function get_thumb($filename) {
@@ -141,7 +142,14 @@ class PP_Bilder {
 			$this->create_thumb($full_filename, $full_thumb, $this->get_thumbs_dir());
 		}
 
-		return $this->get_thumb_url( $filename );
+		$size = getimagesize($full_thumb);
+
+		$thumb = new stdClass;
+		$thumb->url      = $this->get_thumb_url( $filename );
+		$thumb->width    = $size[0];
+		$thumb->height   = $size[1];
+
+		return $thumb;
 	}
 
 	/**
@@ -181,7 +189,7 @@ class PP_Bilder {
 			return false;
 		}
 
-		if ( !is_readable( PP_BILDER_DIRECTORY) ) {
+		if ( !is_readable( PP_BILDER_DIRECTORY ) ) {
 			return false;
 		}
 
@@ -199,6 +207,13 @@ class PP_Bilder {
 			return false;
 		}
 
+		$posts_query = array(
+			'post_type' => 'attachment',
+			'numberposts' => -1
+		);
+
+		$posts = get_posts( $posts_query );
+
 		// Iterate the directory and get/create thumbnails
 		while ( $file = readdir($dir) ) {
 
@@ -213,8 +228,20 @@ class PP_Bilder {
 
 					$image = new stdClass;
 
-					$image->filename = $file;
-					$image->thumb    = $this->get_thumb($file);
+					$image->filename     = $file;
+					$image->thumb        = $this->get_thumb($file);
+					$image->post_id		 = false;
+
+					$file = substr($file, 0, -4);
+
+					foreach ( $posts as $post ) {
+
+						if ( $post->post_name == $file ) {
+							$image->post_id = $post->ID;
+							break;
+						}
+
+					}
 
 					$this->images[] = $image;
 					break;
@@ -244,7 +271,53 @@ class PP_Bilder {
 
 		if ( $this->images_loaded ) {
 			$wp_meta_boxes['post']['side']['low']['postimagediv']['callback'] = array($this, 'post_thumbnail_meta_box');
+
+			wp_enqueue_script( $this->plugin_name, plugins_url( $this->plugin_name . '/js/script.js' ), array('jquery'), false, true );
+
+			$css = file_get_contents( plugin_dir_path( __FILE__ ) . 'css/style.css' );
+			$css = preg_replace("/(\n|\t|  )/", '', $css);
+			$css = str_replace(';}', '}', $css);
+			$css = str_replace(': ', ':', $css);
+
+			printf('<style type="text/css">%s</style>', $css);
 		}
+	}
+
+	/**
+	 * Ajax handler function when selecting an image
+	 */
+	public function ajax_import_image() {
+
+		if ( !isset($_POST['filename']) || strlen($_POST['filename']) == 0 ) {
+			die();
+		}
+
+		$filename = $_POST['filename'];
+		$image    = false;
+
+		$this->load_images();
+
+		foreach ( $this->images as $img ) {
+			if ( $img->filename == $filename ) {
+				$image = $img;
+			}
+		}
+
+		if ( !$image ) {
+			die();
+		}
+
+		require 'lib/class.add-from-server.php';
+
+		$add_from_server = new add_from_server('');
+
+		$result = $add_from_server->handle_import_file( $this->get_image_full_path( $image->filename.'z' ) );
+
+		if ( is_wp_error($result) ) {
+			die("0");
+		}
+
+		die("" . $result);
 	}
 
 	/**
@@ -253,20 +326,38 @@ class PP_Bilder {
 	 * @return void
 	 */
 	public function post_thumbnail_meta_box() {
-		post_thumbnail_meta_box();?>
-		<a href="">Hämta bild från bildbanken</a>
+		post_thumbnail_meta_box();
 
-			<div>
+
+		?>
+	<a title="Hämta bild från bildbanken" href="#TB_inline?height=155&width=300&inlineId=pp-bilder-container" class="thickbox">Hämta bild från bildbanken</a>
+
+		<div id="pp-bilder-container">
+			<div id="pp-bilder">
+
+				<h1>Bildbanken</h1>
+				<p>Detta är gemensamma bilder som du kan välja ifrån när du ska publicera ett nytt inlägg. Klicka på bilden för att välja den som utvald bild för det här inlägget. De bilder du väljer importeras automatiskt till mediabiblioteket så om du har valt en bild en gång går den att välja genom det vanliga mediabiblioteket.</p>
+
 				<?php foreach ( $this->images as $image ) : ?>
 
-				<img src="<?php echo $image->thumb ?>">
+					<img src="<?php echo $image->thumb->url ?>"
+						width=<?php echo $image->thumb->width ?>
+						height=<?php echo $image->thumb->height ?>
+						alt=''
+
+					<?php if ( $image->post_id ) : ?>
+						data-post-id=<?php echo $image->post_id ?>
+					<?php else : ?>
+						data-filename="<?php echo $image->filename ?>"
+					<?php endif ?>
+						>
 
 				<?php endforeach ?>
 			</div>
+		</div>
 
 		<?php
 	}
-
 }
 
 new PP_Bilder();

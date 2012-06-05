@@ -1,0 +1,13 @@
+#pp-bilder-container {
+	display: none;
+}
+
+#pp-bilder {
+	padding: 20px;
+}
+
+#pp-bilder img {
+	border: solid 1px #ccc;
+	margin: 10px;
+	cursor: pointer;
+}
