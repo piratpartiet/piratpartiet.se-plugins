@@ -45,8 +45,11 @@ class PP_Bilder {
 	 * @since 1.0
 	 */
 	public function __construct() {
-		add_action('admin_head', array($this, 'admin_head'));
+
+		// Since 3.4 there's a hook for the ajax call, this wont work in WP <3.4
 		add_action('wp_ajax_set-post-thumbnail', array($this, 'wp_ajax_set_post_thumbnail'), 0);
+
+		add_action('admin_head', array($this, 'admin_head'));
 		add_action('wp_ajax_pp_bilder_import_image', array($this, 'ajax_import_image'));
 	}
 
@@ -343,7 +346,7 @@ class PP_Bilder {
 		global $post;
 
 		?>
-	<a title="Hämta bild från bildbanken" href="#TB_inline?height=155&width=300&inlineId=pp-bilder-container" class="thickbox">Hämta bild från bildbanken</a>
+	<a title="Hämta bild från bildbanken" href="#TB_inline?height=auto&width=auto&inlineId=pp-bilder-container" class="thickbox">Hämta bild från bildbanken</a>
 
 		<div id="pp-bilder-container">
 			<div id="pp-bilder">
