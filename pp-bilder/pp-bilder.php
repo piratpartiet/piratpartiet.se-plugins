@@ -50,6 +50,8 @@ class PP_Bilder {
 		add_action('wp_ajax_set-post-thumbnail', array($this, 'wp_ajax_set_post_thumbnail'), 0);
 
 		add_action('admin_head', array($this, 'admin_head'));
+		add_action('admin_footer', array($this, 'admin_footer'));
+
 		add_action('wp_ajax_pp_bilder_import_image', array($this, 'ajax_import_image'));
 	}
 
@@ -264,10 +266,14 @@ class PP_Bilder {
 	 */
 	public function wp_ajax_set_post_thumbnail() {
 
-		$this->load_images();
+		// When the user removes the thumbnail the thumbnail_id is -1, only then include the select box
+		if ( $_POST['thumbnail_id'] == -1 ) {
 
-		if ( $this->images_loaded ) {
-			add_filter('admin_post_thumbnail_html', array($this, 'admin_post_thumbnail_html') );
+			$this->load_images();
+
+			if ( $this->images_loaded ) {
+				add_filter('admin_post_thumbnail_html', array($this, 'admin_post_thumbnail_html') );
+			}
 		}
 	}
 
@@ -294,6 +300,21 @@ class PP_Bilder {
 
 			printf('<style type="text/css">%s</style>', $css);
 		}
+	}
+
+	/**
+	 * Initializes the client side part of the plugin with nonce
+	 * @return mixed
+	 */
+	public function admin_footer() {
+
+		global $post;
+
+		if ( !$this->images_loaded ) {
+			return;
+		}
+
+		?><script>jQuery(document).ready(function() { PPBilder.init('<?php echo wp_create_nonce( "set_post_thumbnail-" . $post->ID ) ?>'); });</script><?php
 	}
 
 	/**
@@ -343,8 +364,6 @@ class PP_Bilder {
 
 		ob_start();
 
-		global $post;
-
 		?>
 	<a title="Hämta bild från bildbanken" href="#TB_inline?height=auto&width=auto&inlineId=pp-bilder-container" class="thickbox">Hämta bild från bildbanken</a>
 
@@ -371,9 +390,6 @@ class PP_Bilder {
 				<?php endforeach ?>
 			</div>
 		</div>
-
-		<script>jQuery(document).ready(function() { PPBilder.init('<?php echo wp_create_nonce( "set_post_thumbnail-" . $post->ID ) ?>'); });</script>
-
 	<?php
 
 		return $content . ob_get_clean();
