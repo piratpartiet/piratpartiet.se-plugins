@@ -46,13 +46,17 @@ class PP_Bilder {
 	 */
 	public function __construct() {
 
-		// Since 3.4 there's a hook for the ajax call, this wont work in WP <3.4
+		// Since 3.4 there's a hook for the ajax call, this won't work in WP <3.4
 		add_action('wp_ajax_set-post-thumbnail', array($this, 'wp_ajax_set_post_thumbnail'), 0);
-
-		add_action('admin_head', array($this, 'admin_head'));
-		add_action('admin_footer', array($this, 'admin_footer'));
-
 		add_action('wp_ajax_pp_bilder_import_image', array($this, 'ajax_import_image'));
+
+		// Only add head and footer hooks on post.php and post-new.php
+		add_action('admin_head-post-new.php', array($this, 'admin_head'));
+		add_action('admin_head-post.php', array($this, 'admin_head'));
+
+		add_action('admin_footer-post-new.php', array($this, 'admin_footer'));
+		add_action('admin_footer-post.php', array($this, 'admin_footer'));
+
 	}
 
 	/**
@@ -266,14 +270,10 @@ class PP_Bilder {
 	 */
 	public function wp_ajax_set_post_thumbnail() {
 
-		// When the user removes the thumbnail the thumbnail_id is -1, only then include the select box
-		if ( $_POST['thumbnail_id'] == -1 ) {
+		$this->load_images();
 
-			$this->load_images();
-
-			if ( $this->images_loaded ) {
-				add_filter('admin_post_thumbnail_html', array($this, 'admin_post_thumbnail_html') );
-			}
+		if ( $this->images_loaded ) {
+			add_filter('admin_post_thumbnail_html', array($this, 'admin_post_thumbnail_html') );
 		}
 	}
 
