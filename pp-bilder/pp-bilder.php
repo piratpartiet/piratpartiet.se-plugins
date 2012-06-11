@@ -1,4 +1,4 @@
-<?php if ( !defined("ABSPATH") ) die();
+<?php if ( !defined( 'ABSPATH' ) ) die();
 /*
  Plugin Name: Piratpartiet bildhanterare
  Plugin URI: http://www.piratpartiet.se
@@ -8,13 +8,13 @@
  Author URI: https://0x539.se
  */
 
-define('PP_BILDER_DIRECTORY', '/tmp/');
+define( 'PP_BILDER_DIRECTORY', '/tmp/' );
 
 /**
  * Common image manager
- * @author Rickard Andersson
+ * @author  Rickard Andersson
  * @version 1.0
- * @since 1.0
+ * @since   1.0
  */
 class PP_Bilder {
 
@@ -47,21 +47,23 @@ class PP_Bilder {
 	public function __construct() {
 
 		// Since 3.4 there's a hook for the ajax call, this won't work in WP <3.4
-		add_action('wp_ajax_set-post-thumbnail', array($this, 'wp_ajax_set_post_thumbnail'), 0);
-		add_action('wp_ajax_pp_bilder_import_image', array($this, 'ajax_import_image'));
+		add_action( 'wp_ajax_set-post-thumbnail', array( $this, 'wp_ajax_set_post_thumbnail' ), 0 );
+		add_action( 'wp_ajax_pp_bilder_import_image', array( $this, 'ajax_import_image' ) );
 
 		// Only add head and footer hooks on post.php and post-new.php
-		add_action('admin_head-post-new.php', array($this, 'admin_head'));
-		add_action('admin_head-post.php', array($this, 'admin_head'));
+		add_action( 'admin_head-post-new.php', array( $this, 'admin_head' ) );
+		add_action( 'admin_head-post.php', array( $this, 'admin_head' ) );
 
-		add_action('admin_footer-post-new.php', array($this, 'admin_footer'));
-		add_action('admin_footer-post.php', array($this, 'admin_footer'));
+		add_action( 'admin_footer-post-new.php', array( $this, 'admin_footer' ) );
+		add_action( 'admin_footer-post.php', array( $this, 'admin_footer' ) );
 
 	}
 
 	/**
 	 * Returns the full path to the directory / file on disk where the file resides.
+	 *
 	 * @param string $filename  Optional. If given the returned string includes the filename
+	 *
 	 * @return string
 	 * @since 1.0
 	 */
@@ -69,7 +71,7 @@ class PP_Bilder {
 
 		$directory = PP_BILDER_DIRECTORY;
 
-		if ( substr( $directory, -1, 1) != '/' ) {
+		if ( substr( $directory, -1, 1 ) != '/' ) {
 			$directory .= '/';
 		}
 
@@ -87,7 +89,7 @@ class PP_Bilder {
 	 * @since 1.0
 	 */
 	private function get_thumbs_dir() {
-		return ABSPATH . PLUGINDIR . '/'.  $this->plugin_name . '/thumbs/';
+		return ABSPATH . PLUGINDIR . '/' . $this->plugin_name . '/thumbs/';
 	}
 
 	/**
@@ -101,17 +103,21 @@ class PP_Bilder {
 
 	/**
 	 * Returns the name of the thumbnail for a specific file
+	 *
 	 * @param string $filename  Original file name
+	 *
 	 * @return mixed
 	 * @since 1.0
 	 */
 	private function get_thumb_filename( $filename ) {
-		return preg_replace('/(\.(jpg|gif|png))$/i', '-thumb$1', $filename );
+		return preg_replace( '/(\.(jpg|gif|png))$/i', '-thumb$1', $filename );
 	}
 
 	/**
 	 * Returns the full path (directory and filename) to where on disk the thumbnail can be found
+	 *
 	 * @param string $filename  Original file name
+	 *
 	 * @return string
 	 * @since 1.0
 	 */
@@ -121,7 +127,9 @@ class PP_Bilder {
 
 	/**
 	 * Returns the full URL to where the thumbnail can be loaded
+	 *
 	 * @param string $filename  Original file name
+	 *
 	 * @return string
 	 * @since 1.0
 	 */
@@ -131,57 +139,59 @@ class PP_Bilder {
 
 	/**
 	 * Returns the URL for the thumb for the filename specified
+	 *
 	 * @param string $filename  Original file name
+	 *
 	 * @return stdClass
 	 * @since 1.0
 	 */
-	private function get_thumb($filename) {
+	private function get_thumb( $filename ) {
 
-		$full_thumb    = $this->get_thumb_full_path($filename);
-		$full_filename = $this->get_image_full_path($filename);
+		$full_thumb    = $this->get_thumb_full_path( $filename );
+		$full_filename = $this->get_image_full_path( $filename );
 
-		if ( file_exists($full_thumb) ) {
-			$file_mtime  = filemtime($full_filename);
-			$thumb_mtime = filemtime($full_thumb);
+		if ( file_exists( $full_thumb ) ) {
+			$file_mtime  = filemtime( $full_filename );
+			$thumb_mtime = filemtime( $full_thumb );
 
 			if ( $file_mtime > $thumb_mtime ) {
-				$this->create_thumb($full_filename, $full_thumb, $this->get_thumbs_dir());
+				$this->create_thumb( $full_filename, $full_thumb, $this->get_thumbs_dir() );
 			}
-
 		} else {
-			$this->create_thumb($full_filename, $full_thumb, $this->get_thumbs_dir());
+			$this->create_thumb( $full_filename, $full_thumb, $this->get_thumbs_dir() );
 		}
 
-		$size = getimagesize($full_thumb);
+		$size = getimagesize( $full_thumb );
 
-		$thumb = new stdClass;
-		$thumb->url      = $this->get_thumb_url( $filename );
-		$thumb->width    = $size[0];
-		$thumb->height   = $size[1];
+		$thumb         = new stdClass;
+		$thumb->url    = $this->get_thumb_url( $filename );
+		$thumb->width  = $size[ 0 ];
+		$thumb->height = $size[ 1 ];
 
 		return $thumb;
 	}
 
 	/**
 	 * Creates a thumbnail for the file
-	 * @param string $src   Full path to the source image file
+	 *
+	 * @param string $src          Full path to the source image file
 	 * @param string $dst_file     Full path to the destination image file
 	 * @param string $dst_dir      Directory where the thumbnail should be saved
+	 *
 	 * @return string    Returns the filename
 	 * @since 1.0
 	 */
-	private function create_thumb($src, $dst_file, $dst_dir) {
+	private function create_thumb( $src, $dst_file, $dst_dir ) {
 
-		$width = get_option('thumbnail_size_w');
-		$height = get_option('thumbnail_size_h');
+		$width  = get_option( 'thumbnail_size_w' );
+		$height = get_option( 'thumbnail_size_h' );
 
-		$resize = image_resize($src, $width, $height, false, 'thumb', $dst_dir);
+		$resize = image_resize( $src, $width, $height, false, 'thumb', $dst_dir );
 
-		if ( is_wp_error($resize) ) {
-			copy($src, $dst_file);
+		if ( is_wp_error( $resize ) ) {
+			copy( $src, $dst_file );
 
 			return $dst_file;
-
 		} else {
 			return $resize;
 		}
@@ -218,47 +228,43 @@ class PP_Bilder {
 		}
 
 		$posts_query = array(
-			'post_type' => 'attachment',
-			'numberposts' => -1
+			'post_type'   => 'attachment',
+			'numberposts' => - 1,
 		);
 
 		$posts = get_posts( $posts_query );
 
 		// Iterate the directory and get/create thumbnails
-		while ( $file = readdir($dir) ) {
-
-			if ( is_dir($file) || $file == '.' || $file == '..' ) {
+		while ( $file = readdir( $dir ) ) {
+			if ( is_dir( $file ) || $file == '.' || $file == '..' ) {
 				continue;
 			}
-
-			switch ( strtolower( substr($file, -4, 4) ) ) {
+			switch ( strtolower( substr( $file, -4, 4 ) ) ) {
 				case '.jpg':
 				case '.png':
 				case '.gif':
 
 					$image = new stdClass;
 
-					$image->filename     = $file;
-					$image->thumb        = $this->get_thumb($file);
-					$image->post_id		 = false;
+					$image->filename = $file;
+					$image->thumb    = $this->get_thumb( $file );
+					$image->post_id  = false;
 
-					$file = substr($file, 0, -4);
+					$file = substr( $file, 0, -4 );
 
 					foreach ( $posts as $post ) {
-
 						if ( $post->post_name == $file ) {
 							$image->post_id = $post->ID;
 							break;
 						}
-
 					}
 
-					$this->images[] = $image;
+					$this->images[ ] = $image;
 					break;
 			}
 		}
 
-		$this->images_loaded = count($this->images) > 0;
+		$this->images_loaded = count( $this->images ) > 0;
 
 		return $this->images_loaded;
 	}
@@ -273,7 +279,7 @@ class PP_Bilder {
 		$this->load_images();
 
 		if ( $this->images_loaded ) {
-			add_filter('admin_post_thumbnail_html', array($this, 'admin_post_thumbnail_html') );
+			add_filter( 'admin_post_thumbnail_html', array( $this, 'admin_post_thumbnail_html' ) );
 		}
 	}
 
@@ -287,18 +293,17 @@ class PP_Bilder {
 		$this->load_images();
 
 		if ( $this->images_loaded ) {
+			add_filter( 'admin_post_thumbnail_html', array( $this, 'admin_post_thumbnail_html' ) );
 
-			add_filter('admin_post_thumbnail_html', array($this, 'admin_post_thumbnail_html') );
-
-			wp_enqueue_script( $this->plugin_name, plugins_url( $this->plugin_name . '/js/script.js' ), array('jquery'), false, true );
+			wp_enqueue_script( $this->plugin_name, plugins_url( $this->plugin_name . '/js/script.js' ), array( 'jquery' ), false, true );
 			wp_enqueue_script( 'set-post-thumbnail' );
 
 			$css = file_get_contents( plugin_dir_path( __FILE__ ) . 'css/style.css' );
-			$css = preg_replace("/(\n|\t|  )/", '', $css);
-			$css = str_replace(';}', '}', $css);
-			$css = str_replace(': ', ':', $css);
+			$css = preg_replace( "/(\n|\t|  )/", '', $css );
+			$css = str_replace( ';}', '}', $css );
+			$css = str_replace( ': ', ':', $css );
 
-			printf('<style type="text/css">%s</style>', $css);
+			printf( '<style type="text/css">%s</style>', $css );
 		}
 	}
 
@@ -314,7 +319,10 @@ class PP_Bilder {
 			return;
 		}
 
-		?><script>jQuery(document).ready(function() { PPBilder.init('<?php echo wp_create_nonce( "set_post_thumbnail-" . $post->ID ) ?>'); });</script><?php
+		?>
+	<script>jQuery(document).ready(function () {
+		PPBilder.init('<?php echo wp_create_nonce( 'set_post_thumbnail-' . $post->ID ) ?>');
+	});</script><?php
 	}
 
 	/**
@@ -322,11 +330,11 @@ class PP_Bilder {
 	 */
 	public function ajax_import_image() {
 
-		if ( !isset($_POST['filename']) || strlen($_POST['filename']) == 0 ) {
+		if ( !isset( $_POST[ 'filename' ] ) || strlen( $_POST[ 'filename' ] ) == 0 ) {
 			die();
 		}
 
-		$filename = $_POST['filename'];
+		$filename = $_POST[ 'filename' ];
 		$image    = false;
 
 		$this->load_images();
@@ -343,57 +351,64 @@ class PP_Bilder {
 
 		require 'lib/class.add-from-server.php';
 
-		$add_from_server = new add_from_server('');
+		$add_from_server = new add_from_server( '' );
 
 		$result = $add_from_server->handle_import_file( $this->get_image_full_path( $image->filename ) );
 
-		if ( is_wp_error($result) ) {
-			die("0");
+		if ( is_wp_error( $result ) ) {
+			die( '0' );
 		}
 
-		die("" . $result);
+		die( '' . $result );
 	}
 
 	/**
 	 * Adds our addition to the featured image meta box
+	 *
 	 * @param string $content    The markup generated by WordPress
+	 *
 	 * @since 1.0
 	 * @return string
 	 */
-	public function admin_post_thumbnail_html($content) {
+	public function admin_post_thumbnail_html( $content ) {
 
 		ob_start();
 
 		?>
-	<a title="Hämta bild från bildbanken" href="#TB_inline?height=auto&width=auto&inlineId=pp-bilder-container" class="thickbox">Hämta bild från bildbanken</a>
+	<a title="Hämta bild från bildbanken" href="#TB_inline?height=auto&width=auto&inlineId=pp-bilder-container"
+	   class="thickbox">Hämta bild från bildbanken</a>
 
-		<div id="pp-bilder-container">
-			<div id="pp-bilder">
+	<div id="pp-bilder-container">
+		<div id="pp-bilder">
 
-				<h1>Bildbanken</h1>
-				<p>Detta är gemensamma bilder som du kan välja ifrån när du ska publicera ett nytt inlägg. Klicka på bilden för att välja den som utvald bild för det här inlägget. De bilder du väljer importeras automatiskt till mediabiblioteket så om du har valt en bild en gång går den att välja genom det vanliga mediabiblioteket.</p>
+			<h1>Bildbanken</h1>
 
-				<?php foreach ( $this->images as $image ) : ?>
+			<p>Detta är gemensamma bilder som du kan välja ifrån när du ska publicera ett nytt inlägg. Klicka på bilden
+				för att välja den som utvald bild för det här inlägget. De bilder du väljer importeras automatiskt till
+				mediabiblioteket så om du har valt en bild en gång går den att välja genom det vanliga
+				mediabiblioteket.</p>
 
-					<img src="<?php echo $image->thumb->url ?>"
-						width=<?php echo $image->thumb->width ?>
-						height=<?php echo $image->thumb->height ?>
-						alt=''
+			<?php foreach ( $this->images as $image ) : ?>
 
-					<?php if ( $image->post_id ) : ?>
-						data-post-id=<?php echo $image->post_id ?>
-					<?php else : ?>
-						data-filename="<?php echo $image->filename ?>"
-					<?php endif ?>
-						>
+			<img src="<?php echo $image->thumb->url ?>"
+				 width=<?php echo $image->thumb->width ?>
+					 height=<?php echo $image->thumb->height ?>
+				 alt=''
 
-				<?php endforeach ?>
-			</div>
+			<?php if ( $image->post_id ) : ?>
+				data-post-id=<?php echo $image->post_id ?>
+				<?php else : ?>
+				data-filename="<?php echo $image->filename ?>"
+				<?php endif ?>
+			>
+
+			<?php endforeach ?>
 		</div>
+	</div>
 	<?php
 
 		return $content . ob_get_clean();
 	}
 }
 
-new PP_Bilder();
+$pp_bilder = new PP_Bilder();

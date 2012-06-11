@@ -1,4 +1,3 @@
-
 /**
  * 	Top menu styles
  */
@@ -8,6 +7,7 @@
 	top: 0;
 	z-index: 10;
 }
+
 /** Move the top menu down when the menu bar is present **/
 .admin-bar #topmenu {
 	top: 28px;
@@ -17,20 +17,18 @@
 body {
 	padding-top: 41px;
 }
+
 /** Piratpartiet link/logo **/
 #mainlink {
 	width: 160px;
 	height: 41px;
-
 	background: transparent url('images/logo.png') no-repeat top left;
-
 	font-size: 0;
-
 	padding: 0 10px 0 0;
 	margin-right: 20px;
-
 	border-right: solid 15px #ec8b00;
 }
+
 #mainlink a {
 	display: block;
 	width: 100%;
@@ -44,24 +42,26 @@ body {
 	font-family: Arial, sans-serif;
 	font-size: 15px;
 	font-weight: bold;
-
 	-webkit-box-shadow: 0 2px 4px #222;
 	-mox-box-shadow: 0 2px 4px #222;
 	box-shadow: 0 2px 4px #222;
-
 	overflow: hidden;
 }
+
 #topmenu nav > ul, #topmenu > div > ul {
 	width: 1000px;
 	margin: auto;
 }
+
 /** First level styles **/
 #topmenu nav > ul > li, #topmenu > div > ul > li {
 	float: left;
 }
+
 #topmenu nav > ul > li:hover, #topmenu > div > ul > li:hover {
 	background-color: #ec8b00;
 }
+
 #topmenu nav > ul > li > a, #topmenu > div > ul > li a,
 #topmenu nav > ul > li > a:visited, #topmenu > div > ul > li > a:visited {
 	color: #fff;
@@ -77,35 +77,34 @@ body {
 #topmenu .sub-menu {
 	position: absolute;
 	margin-top: -3px;
-
 	visibility: hidden;
-
 	border: solid 1px #ec8b00;
-
 	-webkit-border-radius: 5px;
 	-moz-border-radius: 5px;
 	border-radius: 5px;
-
 	background-color: #fff;
 }
+
 #topmenu li:hover > .sub-menu {
 	visibility: visible;
 }
+
 #topmenu .sub-menu {
 	font-size: 12px;
 }
+
 #topmenu .sub-menu li:nth-of-type(2n) {
 	background-color: #dadada;
 }
+
 #topmenu .sub-menu li:hover {
 	background-color: #aaa;
 }
+
 #topmenu .sub-menu a, #topmenu .sub-menu a:visited {
 	padding: 2px 12px;
-
 	display: block;
 	height: 25px;
-
 	text-decoration: none;
 	color: #000;
 	line-height: 25px;
@@ -120,7 +119,6 @@ body {
 #expander {
 	display: none;
 }
-
 
 @media only screen and (max-width: 768px) {
 
@@ -153,7 +151,6 @@ body {
 	#topmenu.expanded nav > ul > li, #topmenu.expanded > div > ul > li {
 		float: none;
 	}
-
 
 	#topmenu.expanded .sub-menu a, #topmenu.expanded .sub-menu a:visited {
 		color: #fff;
