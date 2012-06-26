@@ -233,6 +233,7 @@ class MV_Cleaner_Walker_Nav_Menu extends Walker {
 
 		if ( $this->first === true ) {
 			$output .= '<li id="mainlink"><a href="http://www.piratpartiet.se/" title="Piratpartiet">Piratpartiet</a></li>';
+			$output .= '<li id="expander"><button>≡</button></li>';
 
 			$this->first = false;
 		}
