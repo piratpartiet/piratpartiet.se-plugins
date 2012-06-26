@@ -62,6 +62,8 @@ class PP_Topmenu {
 		$container = isset( $_GET[ 'html5' ] ) ? 'nav' : 'div';
 		$walker    = new MV_Cleaner_Walker_Nav_Menu();
 
+		ob_start( array( $this, 'compress_html' ) );
+
 		$this->render_css();
 		$this->render_main( $walker, $container );
 		die();
@@ -156,13 +158,39 @@ class PP_Topmenu {
 
 		echo file_get_contents( PP_TOPMENU_URL );
 	}
+
+	function compress_html( $html )
+	{
+		// remove new line
+		$html = str_replace( "\r\n", '', $html );
+		$html = str_replace( "\n", '', $html );
+
+		// remove tab
+		$html = str_replace( "\t", ' ', $html );
+
+		// remove unneccessary whitespace
+		$html = preg_replace( '/(\s){2,}/', ' ', $html );
+
+		// remove HTML comments
+		$html = preg_replace( '/<!--([a-z0-9#\-_\s<>&;.=\/"\'])+-->/i', '', $html );
+
+		// remove unneccessary quotes
+		$html = preg_replace( '/([a-z]+)=[\'"]([0-9a-z\-_]+)["\']/i', '$1=$2', $html );
+
+		// Replace self closing tags
+		$html = preg_replace( '/\s?\/\s?>/', '>', $html );
+
+		// remove empty attributes
+		return preg_replace( '/[a-z]+=["\']{2}/i', '', $html );
+	}
 }
 
 class PP_Topmenu_Walker extends Walker_Nav_Menu {
 
 	private $first = true;
 
-	function start_el( &$output, $item, $depth, $args ) {
+	function start_el( &$output, $item, $depth, $args )
+	{
 
 		if ( $this->first === true ) {
 			$output .= '<li id="mainlink"><a href="http://www.piratpartiet.se/" title="Piratpartiet">Piratpartiet</a></li>';
