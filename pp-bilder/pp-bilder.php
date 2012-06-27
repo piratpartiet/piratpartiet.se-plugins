@@ -8,7 +8,7 @@
  Author URI: https://0x539.se
  */
 
-define( 'PP_BILDER_DIRECTORY', '/tmp/' );
+define( 'PP_BILDER_DIRECTORY', '/var/www/bilder/' );
 
 /**
  * Common image manager
