@@ -232,7 +232,7 @@ class PP_ettan {
 		$cacheKey = 'get_posts-' . $pageKey;
 
 		// Try to fetch from cache, if that fails fetch it from the DB
-		if ( true || ( $posts = get_transient( $cacheKey ) ) === false ) {
+		if ( ( $posts = get_transient( $cacheKey ) ) === false ) {
 			$posts = get_option( 'pp-ettan-posts' );
 
 			// If it's a search query
