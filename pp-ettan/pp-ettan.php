@@ -49,6 +49,7 @@ class PP_ettan {
 		add_filter( 'post_link', array( $this, 'the_permalink' ) );
 		add_filter( 'get_the_guid', array( $this, 'the_permalink' ) );
 		add_filter( 'the_author', array( $this, 'the_author' ) );
+		add_filter( 'post_class', array( $this, 'post_class' ), 10, 3 );
 	}
 
 	/**
@@ -70,7 +71,7 @@ class PP_ettan {
 	 */
 	function load_posts() {
 
-		/** @var WPDB @wpdb */
+		/** @var WPDB $wpdb */
 		global $wpdb;
 
 		$sites = get_option( 'pp-ettan-sites' );
@@ -362,6 +363,7 @@ class PP_ettan {
 	function the_permalink( $permalink ) {
 		global $post;
 
+
 		if ( ! $post ) {
 			return $permalink;
 		}
@@ -382,6 +384,26 @@ class PP_ettan {
 	 */
 	function the_author() {
 		return '';
+	}
+
+	/**
+	 * Attached to the filter 'post_class' and adds a custom class to posts fetched from RSS
+	 *
+	 * @param array   $classes
+	 * @param string  $class
+	 * @param integer $post_id
+	 *
+	 * @return array
+	 */
+	function post_class( $classes, $class, $post_id ) {
+
+		$ettan_post = ! ! get_post_meta( $post_id, 'pp-ettan-post-key', true );
+
+		if ( $ettan_post ) {
+			$classes[ ] = 'ettan';
+		}
+
+		return $classes;
 	}
 
 	/**
