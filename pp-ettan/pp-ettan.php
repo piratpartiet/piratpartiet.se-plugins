@@ -26,8 +26,7 @@ class PP_ettan {
 	 * The constructor is executed when the class is instantiated and the plugin gets loaded
 	 * @since 1.0
 	 */
-	function __construct()
-	{
+	function __construct() {
 		// Add the options menu
 		add_action( 'admin_menu', array( $this, 'init_admin_menu' ) );
 
@@ -54,8 +53,7 @@ class PP_ettan {
 	 * @return int
 	 * @since 1.0
 	 */
-	function wp_feed_cache_transient_lifetime( $seconds )
-	{
+	function wp_feed_cache_transient_lifetime( $seconds ) {
 		return ( $seconds * 0 ) + 1;
 	}
 
@@ -64,15 +62,12 @@ class PP_ettan {
 	 * @since 1.0
 	 * @return void
 	 */
-	function load_posts()
-	{
+	function load_posts() {
 
 		$sites = get_option( 'pp-ettan-sites' );
-		$posts = get_option( 'pp-ettan-posts' );
 
-		if ( ! $posts ) {
-			$posts = array();
-		}
+
+		usort( $sites, function ( $a, $b ) { return strtotime( $a->lastupdate ) - strtotime( $b->lastupdate ); } );
 
 		// Set feed cache time to one second to get fresh results
 		add_filter( 'wp_feed_cache_transient_lifetime', array( $this, 'wp_feed_cache_transient_lifetime' ) );
@@ -100,6 +95,11 @@ class PP_ettan {
 				// Fetch the channel and items for easier access
 				$channel = $feed->data[ 'child' ][ '' ][ 'rss' ][ 0 ][ 'child' ][ '' ][ 'channel' ][ 0 ][ 'child' ][ '' ];
 				$items   = $channel[ 'item' ];
+
+				// If the feed is empty, fall back to an empty array to be type safe
+				if ( ! $items ) {
+					$items = array();
+				}
 
 				foreach ( $items as $item ) {
 					// Tags
@@ -133,11 +133,11 @@ class PP_ettan {
 						$post[ 'ID' ] = $posts[ $post_key ];
 					}
 
-					$post_id            = wp_insert_post( $post );
-					$posts[ $post_key ] = $post_id;
+					$post_id = wp_insert_post( $post );
 
 					update_post_meta( $post_id, 'comment_count', $item[ 'child' ][ 'http://purl.org/rss/1.0/modules/slash/' ][ 'comments' ][ 0 ][ 'data' ] );
 					update_post_meta( $post_id, 'permalink', $item[ 'child' ][ '' ][ 'link' ][ 0 ][ 'data' ] );
+					update_post_meta( $post_id, 'pp-ettan-post-key', $post_key );
 				}
 
 				// Update some status fields for the site
@@ -145,13 +145,16 @@ class PP_ettan {
 				$sites[ $key ]->posts     = count( $items );
 				$sites[ $key ]->lastbuild = $channel[ 'lastBuildDate' ][ 0 ][ 'data' ];
 			}
+
+			// Update the sites option after each iteration
+			$sites[ ] = rand(); // Ever heard of a ugly hack?
+			update_option( 'pp-ettan-sites', $sites );
+			array_pop( $sites ); // http://core.trac.wordpress.org/ticket/22233
+			update_option( 'pp-ettan-sites', $sites );
 		}
 
 		// Remove the filter again
 		remove_filter( 'wp_feed_cache_transient_lifetime', array( $this, 'wp_feed_cache_transient_lifetime' ) );
-
-		update_option( 'pp-ettan-posts', $posts );
-		update_option( 'pp-ettan-sites', $sites );
 	}
 
 	/**
@@ -159,8 +162,7 @@ class PP_ettan {
 	 * @since 1.0
 	 * @return void
 	 */
-	function options_page_ettan()
-	{
+	function options_page_ettan() {
 
 		// Fetch current sites from options
 		$sites    = get_option( 'pp-ettan-sites' );
@@ -255,8 +257,7 @@ class PP_ettan {
 	 * @return object|bool
 	 * @since 1.0
 	 */
-	function get_site( $post_id )
-	{
+	function get_site( $post_id ) {
 
 		// If the post is a local post just return the blog url and name
 		if ( ! self::is_rss_post( $post_id ) ) {
@@ -282,8 +283,7 @@ class PP_ettan {
 	 * @since 1.0
 	 * @return void
 	 */
-	function init_admin_menu()
-	{
+	function init_admin_menu() {
 		$callback = array( $this, 'options_page_ettan' );
 
 		add_options_page( 'Ettan', 'Ettan', 'manage_options', $this->plugin_name, $callback );
@@ -297,8 +297,7 @@ class PP_ettan {
 	 * @return int
 	 * @since 1.0
 	 */
-	function get_comments_number( $comment_count )
-	{
+	function get_comments_number( $comment_count ) {
 		global $post;
 
 		if ( $post->post_type == 'post' ) {
@@ -316,8 +315,7 @@ class PP_ettan {
 	 * @return mixed
 	 * @since 1.0
 	 */
-	function the_permalink( $permalink )
-	{
+	function the_permalink( $permalink ) {
 		global $post;
 
 		if ( ! $post ) {
@@ -338,8 +336,7 @@ class PP_ettan {
 	 *
 	 * @since 1.0
 	 */
-	function the_author()
-	{
+	function the_author() {
 		return '';
 	}
 
@@ -348,8 +345,7 @@ class PP_ettan {
 	 *
 	 * @since 1.0
 	 */
-	function template_redirect()
-	{
+	function template_redirect() {
 		if ( ! is_single() ) {
 			return;
 		}
@@ -374,8 +370,7 @@ class PP_ettan {
 	 *
 	 * @since 1.0
 	 */
-	static function is_rss_post( $post_id )
-	{
+	static function is_rss_post( $post_id ) {
 
 		$permalink = get_post_meta( $post_id, 'permalink', true );
 
@@ -387,8 +382,7 @@ class PP_ettan {
 	 * @static
 	 * @since 1.0
 	 */
-	static function install()
-	{
+	static function install() {
 		wp_schedule_event( time(), 'hourly', 'pp_ettan_load_posts' );
 		wp_schedule_event( time() + 15 * 60, 'hourly', 'pp_ettan_load_posts' );
 		wp_schedule_event( time() + 30 * 60, 'hourly', 'pp_ettan_load_posts' );
@@ -400,8 +394,7 @@ class PP_ettan {
 	 * @static
 	 * @since 1.0
 	 */
-	static function uninstall()
-	{
+	static function uninstall() {
 		wp_clear_scheduled_hook( 'pp_ettan_load_posts' );
 	}
 }
