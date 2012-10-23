@@ -64,9 +64,23 @@ class PP_ettan {
 	 */
 	function load_posts() {
 
+		/** @var WPDB @wpdb */
+		global $wpdb;
+
 		$sites = get_option( 'pp-ettan-sites' );
 
+		// Load post keys from the postmeta table
+		$_posts = $wpdb->get_results( 'SELECT post_id, meta_value FROM '. $wpdb->prefix .'postmeta WHERE meta_key = "pp-ettan-post-key" ORDER BY post_id' );
+		$posts  = array();
 
+		// Transform the result into a lookup list
+		foreach ( $_posts as $post ) {
+			$posts[ intval( $post->meta_value ) ] = intval( $post->post_id );
+		}
+
+		unset( $_posts );
+
+		// Sort the sites array to begin with the site which has waited the longest to be updated
 		usort( $sites, function ( $a, $b ) { return strtotime( $a->lastupdate ) - strtotime( $b->lastupdate ); } );
 
 		// Set feed cache time to one second to get fresh results
