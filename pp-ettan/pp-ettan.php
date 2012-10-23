@@ -27,6 +27,12 @@ class PP_ettan {
 	 * @since 1.0
 	 */
 	function __construct() {
+
+		// Every update calls wp_insert_post() which updates the post to a new revision. Disable revisions. Now.
+		if ( WP_POST_REVISIONS ) {
+			die( "Running PP-ettan with <code>WP_POST_REVISIONS</code> set to <code>true</code> is not something you generally want to do, unless you'd like to clean up the post revisions manually." );
+		}
+
 		// Add the options menu
 		add_action( 'admin_menu', array( $this, 'init_admin_menu' ) );
 
@@ -70,15 +76,25 @@ class PP_ettan {
 		$sites = get_option( 'pp-ettan-sites' );
 
 		// Load post keys from the postmeta table
-		$_posts = $wpdb->get_results( 'SELECT post_id, meta_value FROM '. $wpdb->prefix .'postmeta WHERE meta_key = "pp-ettan-post-key" ORDER BY post_id' );
-		$posts  = array();
+		$meta      = $wpdb->get_results( 'SELECT post_id, meta_value, meta_key FROM ' . $wpdb->prefix . 'postmeta WHERE meta_key IN ("pp-ettan-post-key", "pp-ettan-checksum")' );
+		$posts     = array();
+		$checksums = array();
 
 		// Transform the result into a lookup list
-		foreach ( $_posts as $post ) {
-			$posts[ intval( $post->meta_value ) ] = intval( $post->post_id );
+		foreach ( $meta as $item ) {
+			switch ( $item->meta_key ) {
+				case 'pp-ettan-post-key':
+					$posts[ intval( $item->meta_value ) ] = intval( $item->post_id );
+					break;
+
+				case 'pp-ettan-checksum':
+					$checksums[ intval( $item->post_id ) ] = intval( $item->meta_value );
+					break;
+			}
 		}
 
-		unset( $_posts );
+		// Free up some memory
+		unset( $meta );
 
 		// Sort the sites array to begin with the site which has waited the longest to be updated
 		usort( $sites, function ( $a, $b ) { return strtotime( $a->lastupdate ) - strtotime( $b->lastupdate ); } );
@@ -116,6 +132,21 @@ class PP_ettan {
 				}
 
 				foreach ( $items as $item ) {
+					// GUID and post_key/checksum
+					$guid     = $item[ 'child' ][ '' ][ 'guid' ][ 0 ][ 'data' ];
+					$post_key = crc32( $guid );
+					$checksum = crc32( serialize( $item ) );
+					$post_id  = false;
+
+					if ( isset( $posts[ $post_key ] ) ) {
+						$post_id = $posts[ $post_key ];
+					}
+
+					// If the checksum calculated from $item matches the stored value, no update is necessary
+					if ( $checksums[ $post_id ] === $checksum ) {
+						continue;
+					}
+
 					// Tags
 					$_tags = $item[ 'child' ][ '' ][ 'category' ];
 					$tags  = array();
@@ -139,12 +170,8 @@ class PP_ettan {
 						'tags_input'     => join( ',', $tags ),
 					);
 
-					// GUID + post key
-					$guid     = $item[ 'child' ][ '' ][ 'guid' ][ 0 ][ 'data' ];
-					$post_key = crc32( $guid );
-
-					if ( isset( $posts[ $post_key ] ) ) {
-						$post[ 'ID' ] = $posts[ $post_key ];
+					if ( $post_id ) {
+						$post[ 'ID' ] = $post_id;
 					}
 
 					$post_id = wp_insert_post( $post );
@@ -152,6 +179,7 @@ class PP_ettan {
 					update_post_meta( $post_id, 'comment_count', $item[ 'child' ][ 'http://purl.org/rss/1.0/modules/slash/' ][ 'comments' ][ 0 ][ 'data' ] );
 					update_post_meta( $post_id, 'permalink', $item[ 'child' ][ '' ][ 'link' ][ 0 ][ 'data' ] );
 					update_post_meta( $post_id, 'pp-ettan-post-key', $post_key );
+					update_post_meta( $post_id, 'pp-ettan-checksum', $checksum );
 				}
 
 				// Update some status fields for the site
