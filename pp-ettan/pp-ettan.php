@@ -180,6 +180,8 @@ class PP_ettan {
 					update_post_meta( $post_id, 'permalink', $item[ 'child' ][ '' ][ 'link' ][ 0 ][ 'data' ] );
 					update_post_meta( $post_id, 'pp-ettan-post-key', $post_key );
 					update_post_meta( $post_id, 'pp-ettan-checksum', $checksum );
+					update_post_meta( $post_id, 'pp-ettan-site-name', $site->name );
+					update_post_meta( $post_id, 'pp-ettan-site-url', $site->url );
 				}
 
 				// Update some status fields for the site
