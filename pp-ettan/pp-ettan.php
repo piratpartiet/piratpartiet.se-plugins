@@ -153,6 +153,15 @@ class PP_ettan {
 					$tags  = array();
 
 					foreach ( $_tags as $tag ) {
+
+                        if ( $tag[ 'data' ] == 'Uncategorized' ) {
+                            continue;
+                        }
+
+                        if ( $tag[ 'data' ] == 'Okategoriserad' ) {
+                            continue;
+                        }
+
 						$tags[ ] = $tag[ 'data' ];
 					}
 
