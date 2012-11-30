@@ -74,6 +74,14 @@ class PP_ettan {
 		/** @var WPDB $wpdb */
 		global $wpdb;
 
+		// Tag names which are skipped when reading incoming posts
+		$skip_tags = array(
+			'Okategoriserade',
+			'Okategoriserat',
+			'Uncategorized',
+			'Okategoriserad'
+		);
+
 		$sites = get_option( 'pp-ettan-sites' );
 
 		// Load post keys from the postmeta table
@@ -152,13 +160,16 @@ class PP_ettan {
 					$_tags = $item[ 'child' ][ '' ][ 'category' ];
 					$tags  = array();
 
-					foreach ( $_tags as $tag ) {
+					if ( is_array( $_tags ) ) {
+						foreach ( $_tags as $tag ) {
 
-                        if (in_array($tag['data'], array('Okategoriserade', 'Okategoriserat', 'Uncategorized', 'Okategoriserad'))) {
-                            continue;
-                        }
+							if ( in_array( $tag[ 'data' ], $skip_tags )
+							) {
+								continue;
+							}
 
-						$tags[ ] = $tag[ 'data' ];
+							$tags[ ] = $tag[ 'data' ];
+						}
 					}
 
 					$post_time = strtotime( $item[ 'child' ][ '' ][ 'pubDate' ][ 0 ][ 'data' ] );
@@ -367,7 +378,6 @@ class PP_ettan {
 	 */
 	function the_permalink( $permalink ) {
 		global $post;
-
 
 		if ( ! $post ) {
 			return $permalink;
