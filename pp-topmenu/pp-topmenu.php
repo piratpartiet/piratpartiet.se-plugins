@@ -9,7 +9,7 @@ Author URI: https://0x539.se/
 */
 
 DEFINE( 'PP_TOPMENU_NAME', 'pp-topmenu' );
-DEFINE( 'PP_TOPMENU_URL', 'http://wp02.exz.nu/pp/?render_menu=1&html5=1' );
+DEFINE( 'PP_TOPMENU_URL', 'http://www.piratpartiet.se/?render_menu=1&html5=1' );
 
 class PP_Topmenu {
 
