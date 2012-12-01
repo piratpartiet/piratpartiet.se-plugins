@@ -430,6 +430,12 @@ class PP_ettan {
 	 * @since 1.0
 	 */
 	function the_author() {
+		if (is_feed()) {
+			global $post;
+
+			return get_post_meta( $post->ID, 'pp-ettan-site-name', true );
+		}
+
 		return '';
 	}
 
