@@ -29,12 +29,12 @@ body {
 	padding: 0 10px 0 0;
 	margin-right: 20px;
 	border-right: solid 15px #ec8b00;
-}
 
-#mainlink a {
-	display: block;
-	width: 100%;
-	height: 100%;
+	a {
+		display: block;
+		width: 100%;
+		height: 100%;
+	}
 }
 
 /** Main menu styles **/
@@ -48,75 +48,71 @@ body {
 	-mox-box-shadow: 0 2px 4px #222;
 	box-shadow: 0 2px 4px #222;
 	overflow: hidden;
+
+	& > ul {
+		width: 1000px;
+		margin: auto;
+	}
+
+	/** First level styles **/
+	& > ul > li {
+		float: left;
+	}
+
+	& > ul > li:hover {
+		background-color: #ec8b00;
+	}
+
+	& > ul > li > a, & > ul > li > a:visited {
+		color: #fff;
+		text-decoration: none;
+		height: 41px;
+		padding: 0 10px;
+		display: block;
+		line-height: 41px;
+	}
+
+	/** Second level styles **/
+	.sub-menu {
+		position: absolute;
+		margin-top: -3px;
+		visibility: hidden;
+		border: solid 1px #ec8b00;
+		-webkit-border-radius: 5px;
+		-moz-border-radius: 5px;
+		border-radius: 5px;
+		background-color: #fff;
+		font-size: 12px;
+		min-width: 150px;
+
+		li:nth-of-type(2n) {
+			background-color: #dadada;
+		}
+
+		li:hover {
+			background-color: #aaa;
+		}
+
+		a, a:visited {
+			padding: 2px 12px;
+			display: block;
+			min-height: 25px;
+			text-decoration: none;
+			color: #000;
+			line-height: 25px;
+		}
+	}
+
+	/** Third level styles **/
+	.sub-menu .sub-menu {
+		margin-top: -31px;
+	}
+
+	li:hover > .sub-menu {
+		visibility: visible;
+	}
 }
 
-#topmenu nav > ul, #topmenu > div > ul {
-	width: 1000px;
-	margin: auto;
-}
-
-/** First level styles **/
-#topmenu nav > ul > li, #topmenu > div > ul > li {
-	float: left;
-}
-
-#topmenu nav > ul > li:hover, #topmenu > div > ul > li:hover {
-	background-color: #ec8b00;
-}
-
-#topmenu nav > ul > li > a, #topmenu > div > ul > li a,
-#topmenu nav > ul > li > a:visited, #topmenu > div > ul > li > a:visited {
-	color: #fff;
-	text-decoration: none;
-	height: 41px;
-	padding: 0 10px;
-	display: block;
-	line-height: 41px;
-}
-
-/** Second level styles **/
-
-#topmenu .sub-menu {
-	position: absolute;
-	margin-top: -3px;
-	visibility: hidden;
-	border: solid 1px #ec8b00;
-	-webkit-border-radius: 5px;
-	-moz-border-radius: 5px;
-	border-radius: 5px;
-	background-color: #fff;
-}
-
-#topmenu li:hover > .sub-menu {
-	visibility: visible;
-}
-
-#topmenu .sub-menu {
-	font-size: 12px;
-}
-
-#topmenu .sub-menu li:nth-of-type(2n) {
-	background-color: #dadada;
-}
-
-#topmenu .sub-menu li:hover {
-	background-color: #aaa;
-}
-
-#topmenu .sub-menu a, #topmenu .sub-menu a:visited {
-	padding: 2px 12px;
-	display: block;
-	height: 25px;
-	text-decoration: none;
-	color: #000;
-	line-height: 25px;
-}
-
-/** Third level styles **/
-
-#topmenu .sub-menu .sub-menu {
-	margin-top: -31px;
-}
 
 #expander {
 	display: none;
@@ -126,60 +122,58 @@ body {
 
 	#topmenu {
 		position: static;
-	}
 
-	#topmenu nav > ul, #topmenu > div > ul {
-		width: 185px;
-		overflow: hidden;
-		margin: 0;
-	}
+		nav > ul, & > div > ul {
+			min-width: 185px;
+			overflow: hidden;
+			margin: 0;
 
-	#topmenu.expanded nav > ul, #topmenu.expanded > div > ul {
-		width: auto;
-	}
+			& > li {
+				float: none;
+			}
+			li, li:hover {
+				background-color: transparent !important;
+			}
+		}
 
-	#topmenu.expanded nav, #topmenu.expanded > div {
-		height: auto;
-	}
+		&.expanded {
+			nav, & > div {
+				height: auto;
 
-	#topmenu.expanded .sub-menu {
-		visibility: visible;
-		position: static;
-		background: none;
-		border: none;
-		margin-left: 20px;
-	}
+				& > ul {
+					width: auto;
+				}
+			}
 
-	#topmenu.expanded nav > ul > li, #topmenu.expanded > div > ul > li {
-		float: none;
-	}
+			.sub-menu {
+				visibility: visible;
+				position: static;
+				background: none;
+				border: none;
+				margin: 0 0 0 20px !important;
 
-	#topmenu.expanded .sub-menu a, #topmenu.expanded .sub-menu a:visited {
-		color: #fff;
-	}
-
-	#topmenu.expanded .sub-menu li:nth-of-type(2n),
-	#topmenu.expanded .sub-menu li:hover,
-	#topmenu.expanded nav > ul > li:hover,
-	#topmenu.expanded > div > ul > li:hover {
-		background-color: transparent;
+				a, a:visited {
+					color: #fff;
+				}
+			}
+		}
 	}
 
 	#expander {
 		display: block;
-	}
 
-	#expander button {
-		cursor: pointer;
-		position: absolute;
-		top: 0;
-		right: 5px;
-		width: 40px;
-		height: 40px;
-		background: transparent;
-		color: #fff;
-		border: none;
-		font-size: 30px;
+		button {
+			cursor: pointer;
+			position: absolute;
+			top: 0;
+			right: 5px;
+			width: 40px;
+			height: 40px;
+			background: transparent;
+			color: #fff;
+			border: none;
+			font-size: 30px;
+		}
 	}
 
 	body {
