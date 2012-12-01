@@ -42,6 +42,10 @@ class PP_ettan {
 		// Redirect the user to the remote page for posts
 		add_action( 'template_redirect', array( $this, 'template_redirect' ) );
 
+		// Sidebar handling
+		add_action( 'init', array( $this, 'init_sidebars' ) );
+		add_action( 'init', array( $this, 'remote_sidebar' ) );
+
 		// Filters for loading the rss values instead
 		add_filter( 'get_comments_number', array( $this, 'get_comments_number' ) );
 		add_filter( 'the_permalink', array( $this, 'the_permalink' ) );
@@ -50,6 +54,34 @@ class PP_ettan {
 		add_filter( 'get_the_guid', array( $this, 'the_permalink' ) );
 		add_filter( 'the_author', array( $this, 'the_author' ) );
 		add_filter( 'post_class', array( $this, 'post_class' ), 10, 3 );
+	}
+
+	/**
+	 * Render remote sidebar if requested
+	 */
+	public function remote_sidebar() {
+		if ( isset( $_GET[ 'pp_remote_sidebar' ] ) ) {
+			dynamic_sidebar( 'sidebar-master' );
+			die();
+		}
+	}
+
+	/**
+	 * Initialize master sidebar
+	 */
+	public function init_sidebars() {
+
+		$args = array(
+			'name'          => 'Gemensamt widget-utrymme',
+			'id'            => 'sidebar-master',
+			'description'   => 'Visas överst i sidospalten, full bredd och visas på alla underbloggar',
+			'before_widget' => '<section>',
+			'after_widget'  => '</section>',
+			'before_title'  => '<h1>',
+			'after_title'   => '</h1>'
+		);
+
+		register_sidebar( $args );
 	}
 
 	/**
