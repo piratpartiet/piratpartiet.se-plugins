@@ -1,4 +1,4 @@
-<?php if ( !defined( 'ABSPATH' ) ) die();
+<?php if ( ! defined( 'ABSPATH' ) ) die();
 /*
  Plugin Name: Piratpartiet bildhanterare
  Plugin URI: http://www.piratpartiet.se
@@ -56,7 +56,6 @@ class PP_Bilder {
 
 		add_action( 'admin_footer-post-new.php', array( $this, 'admin_footer' ) );
 		add_action( 'admin_footer-post.php', array( $this, 'admin_footer' ) );
-
 	}
 
 	/**
@@ -71,16 +70,15 @@ class PP_Bilder {
 
 		$directory = PP_BILDER_DIRECTORY;
 
-		if ( substr( $directory, -1, 1 ) != '/' ) {
+		if ( substr( $directory, - 1, 1 ) != '/' ) {
 			$directory .= '/';
 		}
 
-		if ( !$filename ) {
+		if ( ! $filename ) {
 			return $directory;
 		} else {
 			return $directory . $filename;
 		}
-
 	}
 
 	/**
@@ -155,10 +153,10 @@ class PP_Bilder {
 			$thumb_mtime = filemtime( $full_thumb );
 
 			if ( $file_mtime > $thumb_mtime ) {
-				$this->create_thumb( $full_filename, $full_thumb, $this->get_thumbs_dir() );
+				$this->create_thumb( $full_filename, $full_thumb );
 			}
 		} else {
-			$this->create_thumb( $full_filename, $full_thumb, $this->get_thumbs_dir() );
+			$this->create_thumb( $full_filename, $full_thumb );
 		}
 
 		$size = getimagesize( $full_thumb );
@@ -176,25 +174,36 @@ class PP_Bilder {
 	 *
 	 * @param string $src          Full path to the source image file
 	 * @param string $dst_file     Full path to the destination image file
-	 * @param string $dst_dir      Directory where the thumbnail should be saved
 	 *
 	 * @return string    Returns the filename
 	 * @since 1.0
 	 */
-	private function create_thumb( $src, $dst_file, $dst_dir ) {
+	private function create_thumb( $src, $dst_file ) {
 
 		$width  = get_option( 'thumbnail_size_w' );
 		$height = get_option( 'thumbnail_size_h' );
 
-		$resize = image_resize( $src, $width, $height, false, 'thumb', $dst_dir );
+		$editor = wp_get_image_editor( $src );
+
+		if ( is_wp_error( $editor ) ) {
+			copy( $src, $dst_file );
+			return $dst_file;
+		}
+
+		$resize = @$editor->resize( $width, $height );
 
 		if ( is_wp_error( $resize ) ) {
 			copy( $src, $dst_file );
-
 			return $dst_file;
-		} else {
-			return $resize;
 		}
+
+		$result = $editor->save( $dst_file );
+
+		if ( is_wp_error( $result ) ) {
+			copy( $src, $dst_file );
+		}
+
+		return $dst_file;
 	}
 
 	/**
@@ -205,25 +214,25 @@ class PP_Bilder {
 	private function load_images() {
 
 		// First check some preconditions
-		if ( !file_exists( PP_BILDER_DIRECTORY ) ) {
+		if ( ! file_exists( PP_BILDER_DIRECTORY ) ) {
 			return false;
 		}
 
-		if ( !is_readable( PP_BILDER_DIRECTORY ) ) {
+		if ( ! is_readable( PP_BILDER_DIRECTORY ) ) {
 			return false;
 		}
 
-		if ( !file_exists( $this->get_thumbs_dir() ) ) {
+		if ( ! file_exists( $this->get_thumbs_dir() ) ) {
 			return false;
 		}
 
-		if ( !is_writable( $this->get_thumbs_dir() ) ) {
+		if ( ! is_writable( $this->get_thumbs_dir() ) ) {
 			return false;
 		}
 
 		$dir = opendir( PP_BILDER_DIRECTORY );
 
-		if ( !$dir ) {
+		if ( ! $dir ) {
 			return false;
 		}
 
@@ -239,7 +248,7 @@ class PP_Bilder {
 			if ( is_dir( $file ) || $file == '.' || $file == '..' ) {
 				continue;
 			}
-			switch ( strtolower( substr( $file, -4, 4 ) ) ) {
+			switch ( strtolower( substr( $file, - 4, 4 ) ) ) {
 				case '.jpg':
 				case '.png':
 				case '.gif':
@@ -250,7 +259,7 @@ class PP_Bilder {
 					$image->thumb    = $this->get_thumb( $file );
 					$image->post_id  = false;
 
-					$file = substr( $file, 0, -4 );
+					$file = substr( $file, 0, - 4 );
 
 					foreach ( $posts as $post ) {
 						if ( $post->post_name == $file ) {
@@ -322,7 +331,7 @@ class PP_Bilder {
 		?>
 	<script>jQuery(document).ready(function () {
 		PPBilder.init('<?php echo wp_create_nonce( 'set_post_thumbnail-' . $post->ID ) ?>');
-	});</script><?php
+    } );</script><?php
 	}
 
 	/**
@@ -330,7 +339,7 @@ class PP_Bilder {
 	 */
 	public function ajax_import_image() {
 
-		if ( !isset( $_POST[ 'filename' ] ) || strlen( $_POST[ 'filename' ] ) == 0 ) {
+		if ( ! isset( $_POST[ 'filename' ] ) || strlen( $_POST[ 'filename' ] ) == 0 ) {
 			die();
 		}
 
@@ -345,7 +354,7 @@ class PP_Bilder {
 			}
 		}
 
-		if ( !$image ) {
+		if ( ! $image ) {
 			die();
 		}
 
@@ -375,36 +384,36 @@ class PP_Bilder {
 		ob_start();
 
 		?>
-	<a title="Hämta bild från bildbanken" href="#TB_inline?height=auto&width=auto&inlineId=pp-bilder-container"
-	   class="thickbox">Hämta bild från bildbanken</a>
+    <a title="Hämta bild från bildbanken" href="#TB_inline?height=auto&width=auto&inlineId=pp-bilder-container"
+       class="thickbox">Hämta bild från bildbanken</a>
 
-	<div id="pp-bilder-container">
-		<div id="pp-bilder">
+    <div id="pp-bilder-container">
+        <div id="pp-bilder">
 
-			<h1>Bildbanken</h1>
+            <h1>Bildbanken</h1>
 
-			<p>Detta är gemensamma bilder som du kan välja ifrån när du ska publicera ett nytt inlägg. Klicka på bilden
-				för att välja den som utvald bild för det här inlägget. De bilder du väljer importeras automatiskt till
-				mediabiblioteket så om du har valt en bild en gång går den att välja genom det vanliga
-				mediabiblioteket.</p>
+            <p>Detta är gemensamma bilder som du kan välja ifrån när du ska publicera ett nytt inlägg. Klicka på bilden
+                för att välja den som utvald bild för det här inlägget. De bilder du väljer importeras automatiskt till
+                mediabiblioteket så om du har valt en bild en gång går den att välja genom det vanliga
+                mediabiblioteket.</p>
 
 			<?php foreach ( $this->images as $image ) : ?>
 
-			<img src="<?php echo $image->thumb->url ?>"
-				 width=<?php echo $image->thumb->width ?>
-					 height=<?php echo $image->thumb->height ?>
-				 alt=''
+                <img src="<?php echo $image->thumb->url ?>"
+                     width=<?php echo $image->thumb->width ?>
+                             height=<?php echo $image->thumb->height ?>
+                     alt=''
 
 			<?php if ( $image->post_id ) : ?>
-				data-post-id=<?php echo $image->post_id ?>
+                    data-post-id=<?php echo $image->post_id ?>
 				<?php else : ?>
-				data-filename="<?php echo $image->filename ?>"
+                    data-filename="<?php echo $image->filename ?>"
 				<?php endif ?>
-			>
+            >
 
 			<?php endforeach ?>
-		</div>
-	</div>
+        </div>
+    </div>
 	<?php
 
 		return $content . ob_get_clean();
