@@ -1,0 +1,1 @@
+Plugins used by www.piratpartiet.se and related sites
