@@ -60,7 +60,7 @@ class PP_ettan {
 	 * Render remote sidebar if requested
 	 */
 	public function remote_sidebar() {
-		if ( isset( $_GET[ 'pp_remote_sidebar' ] ) ) {
+		if ( isset( $_GET['pp_remote_sidebar'] ) ) {
 			dynamic_sidebar( 'sidebar-master' );
 			die();
 		}
@@ -125,11 +125,11 @@ class PP_ettan {
 		foreach ( $meta as $item ) {
 			switch ( $item->meta_key ) {
 				case 'pp-ettan-post-key':
-					$posts[ intval( $item->meta_value ) ] = intval( $item->post_id );
+					$posts[intval( $item->meta_value )] = intval( $item->post_id );
 					break;
 
 				case 'pp-ettan-checksum':
-					$checksums[ intval( $item->post_id ) ] = intval( $item->meta_value );
+					$checksums[intval( $item->post_id )] = intval( $item->meta_value );
 					break;
 			}
 		}
@@ -138,14 +138,16 @@ class PP_ettan {
 		unset( $meta );
 
 		// Sort the sites array to begin with the site which has waited the longest to be updated
-		usort( $sites, function ( $a, $b ) { return strtotime( $a->lastupdate ) - strtotime( $b->lastupdate ); } );
+		usort( $sites, function ( $a, $b ) {
+			return strtotime( $a->lastupdate ) - strtotime( $b->lastupdate );
+		} );
 
 		// Set feed cache time to one second to get fresh results
 		add_filter( 'wp_feed_cache_transient_lifetime', array( $this, 'wp_feed_cache_transient_lifetime' ) );
 
 		// Iterate all the sites
 		foreach ( $sites as $key => $site ) {
-			$sites[ $key ]->lastupdate = date( 'Y-m-d H:i:s' );
+			$sites[$key]->lastupdate = date( 'Y-m-d H:i:s' );
 
 			$uri = '';
 
@@ -159,13 +161,14 @@ class PP_ettan {
 
 			// Update the status to 'Error' if loading fails
 			if ( is_wp_error( $feed ) ) {
-				$sites[ $key ]->status    = 'Error';
-				$sites[ $key ]->lastbuild = '';
-				$sites[ $key ]->posts     = 0;
-			} else {
+				$sites[$key]->status    = 'Error';
+				$sites[$key]->lastbuild = '';
+				$sites[$key]->posts     = 0;
+			}
+			else {
 				// Fetch the channel and items for easier access
-				$channel = $feed->data[ 'child' ][ '' ][ 'rss' ][ 0 ][ 'child' ][ '' ][ 'channel' ][ 0 ][ 'child' ][ '' ];
-				$items   = $channel[ 'item' ];
+				$channel = $feed->data['child']['']['rss'][0]['child']['']['channel'][0]['child'][''];
+				$items   = $channel['item'];
 
 				// If the feed is empty, fall back to an empty array to be type safe
 				if ( ! $items ) {
@@ -174,59 +177,59 @@ class PP_ettan {
 
 				foreach ( $items as $item ) {
 					// GUID and post_key/checksum
-					$guid     = $item[ 'child' ][ '' ][ 'guid' ][ 0 ][ 'data' ];
+					$guid     = $item['child']['']['guid'][0]['data'];
 					$post_key = crc32( $guid );
 					$checksum = crc32( serialize( $item ) );
 					$post_id  = false;
 
-					if ( isset( $posts[ $post_key ] ) ) {
-						$post_id = $posts[ $post_key ];
+					if ( isset( $posts[$post_key] ) ) {
+						$post_id = $posts[$post_key];
 					}
 
 					// If the checksum calculated from $item matches the stored value, no update is necessary
-					if ( $checksums[ $post_id ] === $checksum ) {
+					if ( $checksums[$post_id] === $checksum ) {
 						continue;
 					}
 
 					// Tags
-					$_tags = $item[ 'child' ][ '' ][ 'category' ];
+					$_tags = $item['child']['']['category'];
 					$tags  = array();
 
 					if ( is_array( $_tags ) ) {
 						foreach ( $_tags as $tag ) {
 
-							if ( in_array( $tag[ 'data' ], $skip_tags )
+							if ( in_array( $tag['data'], $skip_tags )
 							) {
 								continue;
 							}
 
-							$tags[ ] = $tag[ 'data' ];
+							$tags[] = $tag['data'];
 						}
 					}
 
-					$post_time = strtotime( $item[ 'child' ][ '' ][ 'pubDate' ][ 0 ][ 'data' ] );
+					$post_time = strtotime( $item['child']['']['pubDate'][0]['data'] );
 
 					$post = array(
 						'comment_status' => 'closed',
 						'ping_status'    => 'closed',
-						'post_content'   => $item[ 'child' ][ 'http://purl.org/rss/1.0/modules/content/' ][ 'encoded' ][ 0 ][ 'data' ],
+						'post_content'   => $item['child']['http://purl.org/rss/1.0/modules/content/']['encoded'][0]['data'],
 						'post_date'      => date( 'Y-m-d H:i:s', $post_time ),
 						'post_date_gmt'  => gmdate( 'Y-m-d H:i:s', $post_time ),
-						'post_excerpt'   => $item[ 'child' ][ '' ][ 'description' ][ 0 ][ 'data' ],
+						'post_excerpt'   => $item['child']['']['description'][0]['data'],
 						'post_status'    => 'publish',
-						'post_title'     => $item[ 'child' ][ '' ][ 'title' ][ 0 ][ 'data' ],
+						'post_title'     => $item['child']['']['title'][0]['data'],
 						'post_type'      => 'post',
 						'tags_input'     => join( ',', $tags ),
 					);
 
 					if ( $post_id ) {
-						$post[ 'ID' ] = $post_id;
+						$post['ID'] = $post_id;
 					}
 
 					$post_id = wp_insert_post( $post );
 
-					update_post_meta( $post_id, 'comment_count', $item[ 'child' ][ 'http://purl.org/rss/1.0/modules/slash/' ][ 'comments' ][ 0 ][ 'data' ] );
-					update_post_meta( $post_id, 'permalink', $item[ 'child' ][ '' ][ 'link' ][ 0 ][ 'data' ] );
+					update_post_meta( $post_id, 'comment_count', $item['child']['http://purl.org/rss/1.0/modules/slash/']['comments'][0]['data'] );
+					update_post_meta( $post_id, 'permalink', $item['child']['']['link'][0]['data'] );
 					update_post_meta( $post_id, 'pp-ettan-post-key', $post_key );
 					update_post_meta( $post_id, 'pp-ettan-checksum', $checksum );
 					update_post_meta( $post_id, 'pp-ettan-site-name', $site->name );
@@ -234,13 +237,13 @@ class PP_ettan {
 				}
 
 				// Update some status fields for the site
-				$sites[ $key ]->status    = 'OK';
-				$sites[ $key ]->posts     = count( $items );
-				$sites[ $key ]->lastbuild = $channel[ 'lastBuildDate' ][ 0 ][ 'data' ];
+				$sites[$key]->status    = 'OK';
+				$sites[$key]->posts     = count( $items );
+				$sites[$key]->lastbuild = $channel['lastBuildDate'][0]['data'];
 			}
 
 			// Update the sites option after each iteration
-			$sites[ ] = rand(); // Ever heard of a ugly hack?
+			$sites[] = rand(); // Ever heard of a ugly hack?
 			update_option( 'pp-ettan-sites', $sites );
 			array_pop( $sites ); // http://core.trac.wordpress.org/ticket/22233
 			update_option( 'pp-ettan-sites', $sites );
@@ -267,55 +270,57 @@ class PP_ettan {
 		}
 
 		// If the 'delete' button was used
-		if ( isset( $_POST[ '_wpnonce' ] ) && isset( $_POST[ 'key' ] ) && is_numeric( $_POST[ 'key' ] ) && wp_verify_nonce( $_POST[ '_wpnonce' ], 'pp-ettan-rm-site-' . $_POST[ 'key' ] ) ) {
+		if ( isset( $_POST['_wpnonce'] ) && isset( $_POST['key'] ) && is_numeric( $_POST['key'] ) && wp_verify_nonce( $_POST['_wpnonce'], 'pp-ettan-rm-site-' . $_POST['key'] ) ) {
 			// Unset the site and update the option
-			unset( $sites[ $_POST[ 'key' ] ] );
+			unset( $sites[$_POST['key']] );
 			update_option( 'pp-ettan-sites', $sites );
 
 			// Load posts from rss again and re-set the $sites array
 			$this->load_posts();
 			$sites = get_option( 'pp-ettan-sites' );
 
-			$messages[ ] = 'Sajt borttagen, hämtade även manuellt från underbloggar';
+			$messages[] = 'Sajt borttagen, hämtade även manuellt från underbloggar';
 		}
 
 		// If any of the buttons in the 'other' section was used
-		if ( isset( $_POST[ '_wpnonce' ] ) && wp_verify_nonce( $_POST[ '_wpnonce' ], 'pp-ettan-other' ) ) {
+		if ( isset( $_POST['_wpnonce'] ) && wp_verify_nonce( $_POST['_wpnonce'], 'pp-ettan-other' ) ) {
 			// The submit value holds the action
-			switch ( $_POST[ 'submit' ] ) {
+			switch ( $_POST['submit'] ) {
 				case 'Hämta inlägg':
 					$this->load_posts();
-					$sites       = get_option( 'pp-ettan-sites' );
-					$messages[ ] = 'Hämtning från underbloggar genomförd';
+					$sites      = get_option( 'pp-ettan-sites' );
+					$messages[] = 'Hämtning från underbloggar genomförd';
 					break;
 			}
 		}
 
 		// If the add site form was submitted
-		if ( isset( $_POST[ '_wpnonce' ] ) && wp_verify_nonce( $_POST[ '_wpnonce' ], 'pp-ettan-add-site' ) ) {
+		if ( isset( $_POST['_wpnonce'] ) && wp_verify_nonce( $_POST['_wpnonce'], 'pp-ettan-add-site' ) ) {
 			$uri = '';
 
 			// Construct the feed URL
-			$uri .= $_POST[ 'url' ];
+			$uri .= $_POST['url'];
 			$uri .= substr( $uri, - 1, 1 ) != '/' ? '/' : '';
 			$uri .= '?feed=rss2';
 
 			// Validate the resulting URL
 			if ( ! filter_var( $uri, FILTER_VALIDATE_URL ) ) {
-				$errors[ ] = 'Ogiltig adress "' . filter_var( $_POST[ 'url' ], FILTER_SANITIZE_URL ) . '"';
-			} else {
+				$errors[] = 'Ogiltig adress "' . filter_var( $_POST['url'], FILTER_SANITIZE_URL ) . '"';
+			}
+			else {
 				// Fetch the feed
 				$feed = fetch_feed( $uri );
 
 				if ( is_wp_error( $feed ) ) {
-					$errors[ ] = 'Ett fel uppstod när innehåll skulle hämtas: "' . $feed->get_error_message() . '"';
-				} else {
+					$errors[] = 'Ett fel uppstod när innehåll skulle hämtas: "' . $feed->get_error_message() . '"';
+				}
+				else {
 					// Get the generator attribute from the feed
-					$generator = $feed->data[ 'child' ][ '' ][ 'rss' ][ 0 ][ 'child' ][ '' ][ 'channel' ][ 0 ][ 'child' ][ '' ][ 'generator' ][ 0 ][ 'data' ];
+					$generator = $feed->data['child']['']['rss'][0]['child']['']['channel'][0]['child']['']['generator'][0]['data'];
 
 					// ..and chech that it's WordPress
 					if ( substr( $generator, 0, 24 ) != 'http://wordpress.org/?v=' ) {
-						$errors[ ] = 'Adressen verkar inte peka mot en WordPress blogg, generator rapporterar "' . $generator . '"';
+						$errors[] = 'Adressen verkar inte peka mot en WordPress blogg, generator rapporterar "' . $generator . '"';
 					}
 				}
 			}
@@ -323,19 +328,19 @@ class PP_ettan {
 			// If everything went fine, create a new object and add it to current sites
 			if ( count( $errors ) == 0 ) {
 				$site             = new stdClass;
-				$site->url        = $_POST[ 'url' ];
-				$site->name       = $_POST[ 'name' ];
+				$site->url        = $_POST['url'];
+				$site->name       = $_POST['name'];
 				$site->error      = false;
 				$site->lastupdate = false;
 				$site->lastbuild  = false;
 				$site->status     = 'Unknown';
 				$site->posts      = 0;
 
-				$sites[ ] = $site;
+				$sites[] = $site;
 
 				update_option( 'pp-ettan-sites', $sites );
 
-				$messages[ ] = 'Sajt tillagd.';
+				$messages[] = 'Sajt tillagd.';
 			}
 		}
 
@@ -368,7 +373,7 @@ class PP_ettan {
 
 		unset( $post ); // unused, supresses editor warning
 
-		return isset( $sites[ $site ] ) ? $sites[ $site ] : false;
+		return isset( $sites[$site] ) ? $sites[$site] : false;
 	}
 
 	/**
@@ -430,7 +435,7 @@ class PP_ettan {
 	 * @since 1.0
 	 */
 	function the_author() {
-		if (is_feed()) {
+		if ( is_feed() ) {
 			global $post;
 
 			return get_post_meta( $post->ID, 'pp-ettan-site-name', true );
@@ -453,7 +458,7 @@ class PP_ettan {
 		$ettan_post = ! ! get_post_meta( $post_id, 'pp-ettan-post-key', true );
 
 		if ( $ettan_post ) {
-			$classes[ ] = 'ettan';
+			$classes[] = 'ettan';
 		}
 
 		return $classes;
