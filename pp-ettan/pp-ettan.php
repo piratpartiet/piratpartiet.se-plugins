@@ -236,8 +236,7 @@ class PP_ettan {
 					if ( is_array( $_tags ) ) {
 						foreach ( $_tags as $tag ) {
 
-							if ( in_array( $tag['data'], $skip_tags )
-							) {
+							if ( in_array( $tag['data'], $skip_tags ) ) {
 								continue;
 							}
 
@@ -258,6 +257,7 @@ class PP_ettan {
 						'post_title'     => $item['child']['']['title'][0]['data'],
 						'post_type'      => 'post',
 						'tags_input'     => join( ',', $tags ),
+						'tax_input'      => array( 'pp_stream' => array( $site->stream ) ),
 					);
 
 					if ( $post_id ) {
