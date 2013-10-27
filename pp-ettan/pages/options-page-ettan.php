@@ -136,8 +136,15 @@ if ( !current_user_can( 'manage_options' ) ) {
 
 		<?php wp_nonce_field( 'pp-ettan-other' ) ?>
 
-		<input type="submit" name="submit" class="button" value="Hämta inlägg">
-		<em>Hämtar aktuella inlägg från alla underbloggar manuellt</em>
+		<p class="submit">
+			<input type="submit" name="submit" class="button" value="Hämta inlägg">
+			<em>Hämtar aktuella inlägg från alla underbloggar manuellt</em>
+		</p>
+
+		<p class="submit">
+			<input type="submit" name="submit" class="button" value="Uppdatera flöde">
+			<em>Går igenom samtliga inlägg och sätter vilket flöde inlägget ska visas i</em>
+		</p>
 
 	</form>
 </div>

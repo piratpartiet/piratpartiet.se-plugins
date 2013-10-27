@@ -352,6 +352,10 @@ class PP_ettan {
 					$sites      = get_option( 'pp-ettan-sites' );
 					$messages[] = 'Hämtning från underbloggar genomförd';
 					break;
+				case 'Uppdatera flöde':
+					$this->reset_stream();
+					$messages[] = 'Uppdatering av flöde på inlägg genomförd';
+					break;
 			}
 		}
 
@@ -410,32 +414,39 @@ class PP_ettan {
 	}
 
 	/**
-	 * Fetch the site object for a post
+	 * Iterate all the posts and re-set the stream
 	 *
-	 * @param $post_id
-	 *
-	 * @return object|bool
-	 * @since 1.0
+	 * @since 1.1
 	 */
-	function get_site( $post_id ) {
+	protected function reset_stream() {
 
-		// If the post is a local post just return the blog url and name
-		if ( ! self::is_rss_post( $post_id ) ) {
-			$site = new stdClass;
+		$sites = $this->get_sites();
 
-			$site->url  = get_bloginfo( 'url' );
-			$site->name = get_bloginfo( 'name' );
+		$sites_by_url = array();
 
-			return $site;
+		foreach ( $sites as $site ) {
+			$sites_by_url[$site->url] = $site;
 		}
 
-		/** @var $site string */
-		list( $site, $post ) = explode( ':', $post_id );
-		$sites = get_option( 'pp-ettan-sites' );
+		$posts = get_posts( array(
+			'numberposts' => -1,
+		) );
 
-		unset( $post ); // unused, supresses editor warning
+		foreach ( $posts as $post ) {
+			if ( ! $this->is_rss_post( $post->ID ) ) {
+				continue;
+			}
 
-		return isset( $sites[$site] ) ? $sites[$site] : false;
+			$site_url = get_post_meta( $post->ID, 'pp-ettan-site-url', true );
+
+			$site = isset( $sites_by_url[$site_url] ) ? $sites_by_url[$site_url] : '';
+
+			if ( ! $site ) {
+				continue;
+			}
+
+			wp_set_post_terms( $post->ID, $site->stream, 'pp_stream' );
+		}
 	}
 
 	/**
