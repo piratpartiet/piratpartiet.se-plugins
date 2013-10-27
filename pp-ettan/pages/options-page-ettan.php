@@ -23,51 +23,67 @@ if ( !current_user_can( 'manage_options' ) ) {
 
 	<h3>Befintliga sajter</h3>
 
-	<table class="widefat">
-		<thead>
-		<tr>
-			<th>Namn</th>
-			<th>Adress</th>
-			<th>Status</th>
-			<th>Senaste hämtning</th>
-			<th>Senast uppdaterad</th>
-			<th>Antal inlägg</th>
-			<th>Radera</th>
-		</tr>
-		</thead>
-		<tbody>
-			<?php foreach ( $sites as $key => $site ) : ?>
-		<tr>
-			<td><?php echo $site->name ?></td>
-			<td>
-				<a href="<?php echo $site->url ?>" target="_blank"><?php echo $site->url ?></a>
-			</td>
-			<td><?php echo $site->status ?></td>
-			<td><?php echo $site->lastupdate ?></td>
-			<td><?php echo strlen( $site->lastbuild ) > 0 ? date( 'Y-m-d H:i:s', strtotime( $site->lastbuild ) ) : '' ?></td>
-			<td><?php echo $site->posts ?></td>
-			<td>
-				<form action="" method="post">
-					<?php wp_nonce_field( 'pp-ettan-rm-site-' . $key ) ?>
-					<input type="hidden" name="key" value="<?php echo $key ?>">
-					<input type="submit" value="Radera">
-				</form>
-			</td>
-		</tr>
-			<?php endforeach ?>
-		</tbody>
-		<tfoot>
-		<tr>
-			<th>Namn</th>
-			<th>Adress</th>
-			<th>Status</th>
-			<th>Senaste hämtning</th>
-			<th>Senast uppdaterad</th>
-			<th>Antal inlägg</th>
-			<th>Radera</th>
-		</tr>
-		</tfoot>
-	</table>
+	<form action="" method="post">
+		<?php wp_nonce_field('pp-ettan-sites') ?>
+		<table class="widefat">
+			<thead>
+			<tr>
+				<th>Namn</th>
+				<th>Adress</th>
+				<th>Status</th>
+				<th>Senaste hämtning</th>
+				<th>Senast uppdaterad</th>
+				<th>Antal inlägg</th>
+				<th>Flöde</th>
+				<th>Radera</th>
+			</tr>
+			</thead>
+			<tbody>
+				<?php foreach ( $sites as $key => $site ) : ?>
+			<tr>
+				<td><?php echo $site->name ?></td>
+				<td>
+					<a href="<?php echo $site->url ?>" target="_blank"><?php echo $site->url ?></a>
+				</td>
+				<td><?php echo $site->status ?></td>
+				<td><?php echo $site->lastupdate ?></td>
+				<td><?php echo strlen( $site->lastbuild ) > 0 ? date( 'Y-m-d H:i:s', strtotime( $site->lastbuild ) ) : '' ?></td>
+				<td><?php echo $site->posts ?></td>
+				<td>
+					<select name="sites[<?php echo $key ?>][stream]">
+					<?php foreach ($this->get_streams() as $stream) : ?>
+							<option <?php if ($stream->slug === $site->stream) echo 'selected' ?>	value="<?php echo $stream->slug ?>"><?php echo $stream->name ?></option>
+						<?php endforeach ?>
+					</select>
+				</td>
+				<td>
+					<label for="">
+						<input type="checkbox" name="remove[]" value="<?php echo $key ?>" />
+						Radera
+					</label>
+				</td>
+			</tr>
+				<?php endforeach ?>
+			</tbody>
+			<tfoot>
+			<tr>
+				<th>Namn</th>
+				<th>Adress</th>
+				<th>Status</th>
+				<th>Senaste hämtning</th>
+				<th>Senast uppdaterad</th>
+				<th>Antal inlägg</th>
+				<th>Flöde</th>
+				<th>Radera</th>
+			</tr>
+			</tfoot>
+		</table>
+
+		<p class="submit">
+			<input type="submit" name="submit" class="button-primary right" value="Spara">
+		</p>
+	</form>
+
 
 	<?php endif ?>
 
@@ -92,6 +108,18 @@ if ( !current_user_can( 'manage_options' ) ) {
 				</th>
 				<td>
 					<input type="text" name="name" id="pp1-name" required>
+				</td>
+			</tr>
+			<tr>
+				<th>
+					<label for="pp1-stream">Flöde</label>
+				</th>
+				<td>
+					<select name="stream" id="pp1-stream">
+						<?php foreach ($this->get_streams() as $stream) : ?>
+							<option	value="<?php echo $stream->slug ?>"><?php echo $stream->name ?></option>
+						<?php endforeach ?>
+					</select>
 				</td>
 			</tr>
 			</tbody>

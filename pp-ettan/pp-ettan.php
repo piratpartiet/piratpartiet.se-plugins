@@ -292,6 +292,25 @@ class PP_ettan {
 	}
 
 	/**
+	 * @return array
+	 * @since 1.1
+	 */
+	protected function get_streams() {
+		$terms = get_terms( 'pp_stream', array( 'hide_empty' => false ) );
+		return is_wp_error( $terms ) ? array() : $terms;
+	}
+
+	/**
+	 * @return array
+	 * @since 1.1
+	 */
+	protected function get_sites() {
+		$sites = get_option( 'pp-ettan-sites' );
+
+		return $sites ? $sites : array();
+	}
+
+	/**
 	 * Handler function for the options page, handles actions from the form and renders the result
 	 * @since 1.0
 	 * @return void
@@ -299,25 +318,29 @@ class PP_ettan {
 	function options_page_ettan() {
 
 		// Fetch current sites from options
-		$sites    = get_option( 'pp-ettan-sites' );
+		$sites    = $this->get_sites();
 		$errors   = array();
 		$messages = array();
 
-		if ( ! $sites ) {
-			$sites = array();
-		}
+		if ( isset( $_POST['_wpnonce'] ) && wp_verify_nonce( $_POST['_wpnonce'], 'pp-ettan-sites' ) ) {
 
-		// If the 'delete' button was used
-		if ( isset( $_POST['_wpnonce'] ) && isset( $_POST['key'] ) && is_numeric( $_POST['key'] ) && wp_verify_nonce( $_POST['_wpnonce'], 'pp-ettan-rm-site-' . $_POST['key'] ) ) {
-			// Unset the site and update the option
-			unset( $sites[$_POST['key']] );
+			$post_sites = isset( $_POST['sites'] ) ? $_POST['sites'] : array();
+
+			foreach ( $post_sites as $key => $values ) {
+				$sites[$key]->stream = $values['stream'];
+			}
+
+			$remove = isset( $_POST['remove'] ) ? $_POST['remove'] : array();
+
+			foreach ( $remove as $remove_key ) {
+				$messages[] = $sites[$remove_key]->name . " borttagen";
+				unset( $sites[$remove_key] );
+			}
+
 			update_option( 'pp-ettan-sites', $sites );
-
-			// Load posts from rss again and re-set the $sites array
-			$this->load_posts();
 			$sites = get_option( 'pp-ettan-sites' );
 
-			$messages[] = 'Sajt borttagen, hämtade även manuellt från underbloggar';
+			$messages[] = 'Sparade inställningar';
 		}
 
 		// If any of the buttons in the 'other' section was used
@@ -373,6 +396,7 @@ class PP_ettan {
 				$site->lastbuild  = false;
 				$site->status     = 'Unknown';
 				$site->posts      = 0;
+				$site->stream     = $_POST['stream'];
 
 				$sites[] = $site;
 
