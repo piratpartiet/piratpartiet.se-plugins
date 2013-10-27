@@ -46,6 +46,9 @@ class PP_ettan {
 		add_action( 'init', array( $this, 'init_sidebars' ) );
 		add_action( 'init', array( $this, 'remote_sidebar' ) );
 
+		// Multiple stream handling
+		add_action( 'init', array( $this, 'init_taxonomies' ) );
+
 		// Filters for loading the rss values instead
 		add_filter( 'get_comments_number', array( $this, 'get_comments_number' ) );
 		add_filter( 'the_permalink', array( $this, 'the_permalink' ) );
@@ -57,7 +60,41 @@ class PP_ettan {
 	}
 
 	/**
+	 * Initialize taxonomies
+	 *
+	 * @since 1.1
+	 */
+	public function init_taxonomies() {
+
+		$labels = array(
+			'name'              => _x( 'Stream', 'taxonomy general name' ),
+			'singular_name'     => _x( 'Stream', 'taxonomy singular name' ),
+			'search_items'      => __( 'Search Streams' ),
+			'all_items'         => __( 'All Streams' ),
+			'parent_item'       => __( 'Parent Stream' ),
+			'parent_item_colon' => __( 'Parent Stream:' ),
+			'edit_item'         => __( 'Edit Stream' ),
+			'update_item'       => __( 'Update Stream' ),
+			'add_new_item'      => __( 'Add New Stream' ),
+			'new_item_name'     => __( 'New Stream Name' ),
+			'menu_name'         => __( 'Stream' ),
+		);
+
+		$args = array(
+			'hierarchical'      => false,
+			'labels'            => $labels,
+			'show_ui'           => true,
+			'show_admin_column' => true,
+			'query_var'         => 'stream',
+			'rewrite'           => array( 'slug' => 'stream' ),
+		);
+
+		register_taxonomy( 'pp_stream', 'post', $args );
+	}
+
+	/**
 	 * Render remote sidebar if requested
+	 * @since 1.0
 	 */
 	public function remote_sidebar() {
 		if ( isset( $_GET['pp_remote_sidebar'] ) ) {
@@ -68,6 +105,7 @@ class PP_ettan {
 
 	/**
 	 * Initialize master sidebar
+	 * @since 1.0
 	 */
 	public function init_sidebars() {
 
@@ -452,6 +490,7 @@ class PP_ettan {
 	 * @param integer $post_id
 	 *
 	 * @return array
+	 * @since 1.0
 	 */
 	function post_class( $classes, $class, $post_id ) {
 
