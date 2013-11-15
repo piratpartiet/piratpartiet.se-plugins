@@ -3,9 +3,14 @@
 Plugin Name: Piratpartiet startsida
 Plugin URI: http://www.piratpartiet.se
 Description: Hämta inlägg från underbloggar och visa på startsidan
-Version: 1.0
+Version: 1.1
 Author: Rickard Andersson
 Author URI: https://0x539.se
+
+1.0: Initial release
+1.1:
+- Added support for multiple streams
+- Added hooks to get the post thumbnail with regular WordPress functions
 */
 
 /**
@@ -57,6 +62,9 @@ class PP_ettan {
 		add_filter( 'get_the_guid', array( $this, 'the_permalink' ) );
 		add_filter( 'the_author', array( $this, 'the_author' ) );
 		add_filter( 'post_class', array( $this, 'post_class' ), 10, 3 );
+		add_filter( 'post_thumbnail_html', array( $this, 'post_thumbnail_html' ), 10, 2 );
+		add_filter( 'get_post_metadata', array( $this, 'get_post_metadata'), 10, 3 );
+		add_filter( 'the_excerpt', array( $this, 'the_excerpt' ) );
 	}
 
 	/**
@@ -252,7 +260,7 @@ class PP_ettan {
 						'post_content'   => $item['child']['http://purl.org/rss/1.0/modules/content/']['encoded'][0]['data'],
 						'post_date'      => date( 'Y-m-d H:i:s', $post_time ),
 						'post_date_gmt'  => gmdate( 'Y-m-d H:i:s', $post_time ),
-						'post_excerpt'   => $item['child']['']['description'][0]['data'],
+						'post_excerpt'   => strip_tags($item['child']['']['description'][0]['data']),
 						'post_status'    => 'publish',
 						'post_title'     => $item['child']['']['title'][0]['data'],
 						'post_type'      => 'post',
@@ -298,6 +306,33 @@ class PP_ettan {
 	protected function get_streams() {
 		$terms = get_terms( 'pp_stream', array( 'hide_empty' => false ) );
 		return is_wp_error( $terms ) ? array() : $terms;
+	}
+
+	/**
+	 * Will set $wp_query to a query for the stream with the given name
+	 *
+	 * @param string $name Term slug
+	 * @param int $max Max number of posts
+	 *
+	 * @since 1.1
+	 */
+	public function query_stream($name, $max) {
+
+		global $wp_query;
+
+		$args = array(
+			'tax_query' => array(
+				array(
+					'taxonomy' => 'pp_stream',
+					'field' => 'slug',
+					'terms' => $name,
+				),
+			),
+			'posts_per_page' => $max,
+		);
+
+		$wp_query = new WP_query($args);
+
 	}
 
 	/**
@@ -555,6 +590,101 @@ class PP_ettan {
 		if ( $permalink ) {
 			wp_redirect( $permalink, 301 );
 		}
+	}
+
+	/**
+	 * Attached to the filter 'post_thumbnail_html' to return the markup from the thumbnail included inside the contents of the RSS post
+	 *
+	 * @param $html
+	 * @param $post_id
+	 *
+	 * @return string
+	 * @since 1.1
+	 */
+	function post_thumbnail_html($html, $post_id) {
+
+		if (!$html && $this->get_post_thumbnail_html($post_id)) {
+			return $this->get_post_thumbnail_html($post_id);
+		}
+
+		return $html;
+	}
+
+	/**
+	 * Attached to the filter 'get_post_metadata' to return true if the RSS post contains a thumbnail
+	 *
+	 * @param mixed $null Seems unused by WP?
+	 * @param int $object_id  Post ID
+	 * @param string $meta_key   Name of the meta key
+	 *
+	 * @return int|null
+	 * @since 1.1
+	 */
+	function get_post_metadata($null, $object_id, $meta_key) {
+		if ($meta_key !== '_thumbnail_id') {
+			return null;
+		}
+
+		if (!$this->is_rss_post($object_id)) {
+			return null;
+		}
+
+		if (!$this->get_post_thumbnail_html($object_id)) {
+			return null;
+		}
+
+		// Just return something and let post_thumbnail_hook figure out the correct HTML
+		return 1;
+	}
+
+	/**
+	 * Will load the post and try to find the post thumbnail from the RSS post if available
+	 *
+	 * @param $object_id
+	 *
+	 * @return bool|string
+	 * @since 1.1
+	 */
+	protected function get_post_thumbnail_html($object_id) {
+
+		if (!$this->is_rss_post($object_id)) {
+			return false;
+		}
+
+		$post = get_post($object_id);
+
+		if (substr($post->post_content, 0, strlen('<figure class="alignleft">')) !== '<figure class="alignleft">') {
+			return false;
+		}
+
+		$img_start = strpos($post->post_content, '<img');
+
+		if (!$img_start) {
+			return false;
+		}
+
+		$img_end = strpos($post->post_content, '>', $img_start);
+
+		if (!$img_end) {
+			return false;
+		}
+
+		return substr($post->post_content, $img_start, $img_end - $img_start + 1);
+	}
+
+	/**
+	 * Attached to the filter 'the_excerpt' and strips HTML since old (pre 1.1) posts could contain excerpts with HTML
+	 *
+	 * Previous to 1.1 the thumbnail would get outputted within the excerpt. As of 1.1 this is handled by hooking
+	 * into the post thumbnail functions in WordPress.
+	 *
+	 * @param string $excerpt
+	 *
+	 * @return string
+	 * @since 1.1
+	 */
+	public function the_excerpt($excerpt) {
+		return strip_tags($excerpt);
 	}
 
 	/**
